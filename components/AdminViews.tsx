@@ -18,30 +18,39 @@ import { getAppData, saveAllData, overwriteAllData } from '../services/dataServi
 // --- VISTAS DE SOLO LECTURA PARA SUPERVISOR ---
 
 export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[] }> = ({ users, posList }) => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in">
-        <div className="p-6 border-b dark:border-slate-700">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-h-[80vh] flex flex-col">
+        <div className="p-6 border-b dark:border-slate-700 shrink-0">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Usuarios</h2>
         </div>
-        <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] border-b dark:border-slate-700">
-                <tr><th className="p-4">Cód. Tienda</th><th className="p-4">Zona</th><th className="p-4">Nombre</th><th className="p-4">Departamento</th><th className="p-4">Grupo</th><th className="p-4">Ver PVP</th></tr>
-            </thead>
-            <tbody className="divide-y dark:divide-slate-700">
-                {users.map(u => {
-                    const uPos = posList.find(p => p.zona === u.zona);
-                    return (
-                        <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                            <td className="p-4 font-bold">{uPos?.código || '--'}</td>
-                            <td className="p-4 font-medium">{u.zona}</td>
-                            <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{u.nombre}</td>
-                            <td className="p-4 text-slate-500">{u.departamento}</td>
-                            <td className="p-4 text-slate-500">{u.grupo}</td>
-                            <td className="p-4 font-bold">{u.verPVP ? 'Sí' : 'No'}</td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </table>
+        <div className="overflow-auto custom-scrollbar">
+            <table className="w-full text-left text-sm border-separate border-spacing-0">
+                <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Cód. Tienda</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Zona</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Nombre</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Departamento</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Grupo</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Ver PVP</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-700">
+                    {users.map(u => {
+                        const uPos = posList.find(p => p.zona === u.zona);
+                        return (
+                            <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                                <td className="p-4 font-bold">{uPos?.código || '--'}</td>
+                                <td className="p-4 font-medium">{u.zona}</td>
+                                <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{u.nombre}</td>
+                                <td className="p-4 text-slate-500">{u.departamento}</td>
+                                <td className="p-4 text-slate-500">{u.grupo}</td>
+                                <td className="p-4 font-bold">{u.verPVP ? 'Sí' : 'No'}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
     </div>
 );
 
@@ -282,7 +291,7 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
         </>
     );
 };
-
+// ... resto del archivo sin cambios ... (manteniendo POSList, GroupsList, etc.)
 export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onUpdate }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingPOS, setEditingPOS] = useState<PointOfSale | null>(null);
@@ -291,7 +300,6 @@ export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onU
     
     const [groupsList, setGroupsList] = useState<Group[]>([]);
 
-    // Cargar grupos para el desplegable
     useEffect(() => {
         getAppData().then(data => {
             setGroupsList(data.groups || []);
@@ -316,7 +324,6 @@ export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onU
              return;
         }
 
-        // VALIDACIÓN: Comprobar duplicados
         const currentId = editingPOS?.id || '';
         const codeExists = pos.some(p => p.código === formData.código && p.id !== currentId);
         const zoneExists = pos.some(p => p.zona === formData.zona && p.id !== currentId);
@@ -414,7 +421,6 @@ export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onU
         </>
     );
 };
-
 export const GroupsList: React.FC<{ groups: Group[] } & ViewProps> = ({ groups, onUpdate }) => {
     const [inputValue, setInputValue] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -474,7 +480,6 @@ export const GroupsList: React.FC<{ groups: Group[] } & ViewProps> = ({ groups, 
         </>
     );
 };
-
 export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ families, onUpdate }) => {
     const [form, setForm] = useState({ id: '', nombre: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -483,25 +488,15 @@ export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ fam
     const handleAddOrUpdate = () => {
         if (!form.id.trim() || !form.nombre.trim()) return alert("El código y el nombre son obligatorios");
         
-        // Validar código único solo si no estamos editando el mismo
         if (!editingId && families.some(f => f.id === form.id)) {
             return alert("Ya existe una familia con ese código.");
         }
 
         let updated = [...families];
         if (editingId) {
-            // Al editar, NO permitimos cambiar el ID porque es la clave de enlace, pero si el usuario lo necesita, debería borrar y crear.
-            // Aquí asumiremos que está editando el NOMBRE. Si cambió el ID en el input, técnicamente está creando uno nuevo si no controlamos el ID original.
-            // Para simplificar: Update busca por ID original si lo tuviéramos, pero aquí editingId ES el id (codigo).
-            // Si editingId existe, actualizamos ese registro.
-            // PERO: Si el usuario cambia el ID en el input, debemos gestionar eso.
-            // Estrategia simple: Borrar el viejo y crear el nuevo si el ID cambió, o actualizar si es el mismo.
-            
-            // Caso simple: Actualizar nombre del ID en edición (Input ID deshabilitado al editar para evitar romper relaciones)
             updated = families.map(f => f.id === editingId ? { ...f, nombre: form.nombre } : f);
         } else {
             updated.push({ id: form.id, nombre: form.nombre });
-            // Ordenar por ID numérico
             updated.sort((a, b) => parseInt(a.id) - parseInt(b.id));
         }
         
@@ -584,12 +579,9 @@ export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ fam
         </>
     );
 };
-
-// --- FUNCIÓN DE PARSEO CSV ROBUSTA ---
 const normalizeHeader = (h: string): string => {
     const clean = h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/\./g, '');
     
-    // Mapeo inteligente de cabeceras comunes a las claves internas
     if (clean.includes('referencia') || clean === 'ref') return 'Referencia';
     if (clean.includes('seccion') || clean.includes('sección')) return 'Sección';
     if (clean.includes('descripcion') || clean.includes('descripción') || clean === 'desc') return 'Descripción';
@@ -598,7 +590,6 @@ const normalizeHeader = (h: string): string => {
     if (clean.includes('ult') && clean.includes('pro')) return 'Ult.Pro';
     if (clean === 'iva') return 'IVA';
     
-    // Para Tarifas
     if (clean === 'cod' || clean === 'código') return 'Cod.';
     if (clean.includes('tienda') || clean.includes('centro')) return 'Tienda';
     if (clean.includes('cod') && clean.includes('art')) return 'Cód. Art.';
@@ -607,25 +598,17 @@ const normalizeHeader = (h: string): string => {
     if (clean.includes('ini') && clean.includes('ofe')) return 'Fec.Ini.Ofe.';
     if (clean.includes('fin') && clean.includes('ofe')) return 'Fec.Fin.Ofe.';
 
-    return h.trim().replace(/^"|"$/g, ''); // Si no coincide, devolvemos limpio
+    return h.trim().replace(/^"|"$/g, '');
 };
 
 const parseCSV = (content: string): any[] => {
     const lines = content.split('\n').filter(l => l.trim());
     if (lines.length === 0) return [];
-    
-    // Detectamos si es separado por coma o punto y coma
     const separator = lines[0].includes(';') ? ';' : ',';
-    // Normalizamos las cabeceras
     const rawHeaders = lines[0].split(separator);
     const headers = rawHeaders.map(normalizeHeader);
     
-    console.log("Cabeceras detectadas (Original -> Normalizada):");
-    rawHeaders.forEach((h, i) => console.log(`${h} -> ${headers[i]}`));
-
     return lines.slice(1).map(line => {
-        // Separación simple (nota: esto falla con comas dentro de comillas, pero para este caso de uso suele bastar)
-        // Para ser más robusto en el futuro se podría usar una librería, pero mantendremos "sin deps externas"
         const values = line.split(separator);
         const obj: any = {};
         headers.forEach((h, i) => {
@@ -640,7 +623,6 @@ const parseCSV = (content: string): any[] => {
 export const DataUploadView: React.FC = () => {
     const [pendingArticulos, setPendingArticulos] = useState<Articulo[] | null>(null);
     const [pendingTarifas, setPendingTarifas] = useState<Tarifa[] | null>(null);
-    
     const [updating, setUpdating] = useState(false);
     const [success, setSuccess] = useState(false);
     
@@ -658,7 +640,6 @@ export const DataUploadView: React.FC = () => {
                 const parsed = parseCSV(text);
                 
                 if (type === 'art') {
-                    // Validación simple: ¿Tiene referencia?
                     if (parsed.length > 0 && !parsed[0].Referencia) {
                          alert("⚠️ Advertencia: No se detectó la columna 'Referencia'. Revisa las cabeceras del CSV.");
                     }
@@ -674,30 +655,23 @@ export const DataUploadView: React.FC = () => {
                 alert("Error al leer el archivo CSV. Asegúrate de que el formato sea correcto.");
             }
         };
-        // Leemos como texto (UTF-8 por defecto)
         reader.readAsText(file);
     };
 
     const handleUpdate = async () => {
         if (!pendingArticulos && !pendingTarifas) return;
         setUpdating(true);
-        
         try {
             const updates: Partial<AppData> = {};
             if (pendingArticulos) updates.articulos = pendingArticulos;
             if (pendingTarifas) updates.tarifas = pendingTarifas;
-            
             await saveAllData(updates);
-            
             setSuccess(true);
             setTimeout(() => setSuccess(false), 5000);
-            
-            // Limpiar estados pendientes
             setPendingArticulos(null);
             setPendingTarifas(null);
             if (fileArticulosRef.current) fileArticulosRef.current.value = '';
             if (fileTarifasRef.current) fileTarifasRef.current.value = '';
-            
         } catch (error) {
             console.error("Error saving data", error);
             alert("Hubo un error al guardar los datos en la base de datos.");
@@ -766,7 +740,6 @@ export const DataUploadView: React.FC = () => {
         </div>
     );
 };
-
 export const DataExportView: React.FC = () => {
     const handleDownload = async () => {
         try {
@@ -774,10 +747,8 @@ export const DataExportView: React.FC = () => {
             const jsonString = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
             const now = new Date();
             const filename = `backup_tarifas_${now.toISOString().split('T')[0]}.json`;
-            
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
@@ -808,7 +779,6 @@ export const DataExportView: React.FC = () => {
         </div>
     );
 };
-
 export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: (u: Partial<AppData>) => void, onRefresh: () => void }> = ({ reports, onUpdate, onRefresh }) => {
     const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '' });
 
@@ -903,7 +873,6 @@ export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: (u: Parti
         </>
     );
 };
-
 export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onUpdate: (u: Partial<AppData>) => void }> = ({ backups, currentData, onUpdate }) => {
     const [backupName, setBackupName] = useState('');
     const [restoring, setRestoring] = useState(false);
@@ -938,7 +907,7 @@ export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onU
         const file = e.target.files?.[0];
         if (!file) return;
         if (!window.confirm('⚠️ ATENCIÓN: Se borrarán los datos actuales para cargar los del archivo. ¿Deseas proceder?')) {
-            e.target.value = ''; // Resetear el input si cancela
+            e.target.value = ''; 
             return;
         }
         setRestoring(true);
@@ -951,7 +920,7 @@ export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onU
             } catch (err) { 
                 alert('Archivo inválido o corrupto.'); 
                 setRestoring(false); 
-                e.target.value = ''; // Resetear
+                e.target.value = ''; 
             }
         };
         reader.readAsText(file);
@@ -991,7 +960,6 @@ export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onU
                     )}
                 </div>
                 <div className="mt-12 pt-8 border-t dark:border-slate-700 w-full">
-                    {/* BOTÓN REPARADO: Usando label para disparar el input file nativo de forma fiable */}
                     <label 
                         htmlFor="restore-file-input" 
                         className="cursor-pointer text-brand-600 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:bg-brand-50 px-6 py-3 rounded-lg transition-all border border-transparent hover:border-brand-200"
@@ -1011,7 +979,6 @@ export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onU
         </div>
     );
 };
-
 export const SettingsView: React.FC<{companyName?: string, onUpdate: (u: Partial<AppData>) => void}> = ({companyName, onUpdate}) => {
     const [name, setName] = useState(companyName || '');
     const [isSaving, setIsSaving] = useState(false);
