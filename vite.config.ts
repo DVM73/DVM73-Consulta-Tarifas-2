@@ -1,4 +1,3 @@
-
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -32,6 +31,12 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './'),
       },
     },
+
+    // ⭐⭐⭐ AÑADIDO AQUÍ: fuerza el puerto 5174 para Taller ⭐⭐⭐
+    server: {
+      port: 5174
+    },
+
     build: {
       target: 'esnext',
       outDir: 'dist',
