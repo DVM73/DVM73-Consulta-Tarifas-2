@@ -15,7 +15,7 @@ import HelpIcon from './icons/HelpIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import { getAppData, saveAllData, overwriteAllData } from '../services/dataService';
 
-// --- VISTAS DE SOLO LECTURA PARA SUPERVISOR ---
+// --- VISTAS DE SOLO LECTURA PARA SUPERVISOR (Con Cabeceras Robustas) ---
 
 export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[] }> = ({ users, posList }) => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-h-[80vh] flex flex-col">
@@ -24,14 +24,14 @@ export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[]
         </div>
         <div className="overflow-auto custom-scrollbar">
             <table className="w-full text-left text-sm border-separate border-spacing-0">
-                <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] sticky top-0 z-10 shadow-sm">
+                <thead className="sticky top-0 z-20 shadow-sm">
                     <tr>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Cód. Tienda</th>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Zona</th>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Nombre</th>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Departamento</th>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Grupo</th>
-                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">Ver PVP</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Cód. Tienda</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Nombre</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Departamento</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Grupo</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Ver PVP</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y dark:divide-slate-700">
@@ -55,26 +55,34 @@ export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[]
 );
 
 export const ReadOnlyPOSList: React.FC<{ pos: PointOfSale[] }> = ({ pos }) => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in">
-        <div className="p-6 border-b dark:border-slate-700">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-h-[80vh] flex flex-col">
+        <div className="p-6 border-b dark:border-slate-700 shrink-0">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Puntos de Venta</h2>
         </div>
-        <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] border-b dark:border-slate-700">
-                <tr><th className="p-4">Cód</th><th className="p-4">Zona</th><th className="p-4">Grupo</th><th className="p-4">Dirección</th><th className="p-4">Población</th></tr>
-            </thead>
-            <tbody className="divide-y dark:divide-slate-700">
-                {pos.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                        <td className="p-4 font-bold">{p.código}</td>
-                        <td className="p-4 font-bold text-slate-700 dark:text-slate-200">{p.zona}</td>
-                        <td className="p-4 text-slate-500">{p.grupo}</td>
-                        <td className="p-4 text-slate-500 text-xs">{p.dirección}</td>
-                        <td className="p-4 text-slate-500">{p.población}</td>
+        <div className="overflow-auto custom-scrollbar">
+            <table className="w-full text-left text-sm border-separate border-spacing-0">
+                <thead className="sticky top-0 z-20 shadow-sm">
+                    <tr>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Cód</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Grupo</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Dirección</th>
+                        <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Población</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-700">
+                    {pos.map(p => (
+                        <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                            <td className="p-4 font-bold">{p.código}</td>
+                            <td className="p-4 font-bold text-slate-700 dark:text-slate-200">{p.zona}</td>
+                            <td className="p-4 text-slate-500">{p.grupo}</td>
+                            <td className="p-4 text-slate-500 text-xs">{p.dirección}</td>
+                            <td className="p-4 text-slate-500">{p.población}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     </div>
 );
 
@@ -256,42 +264,52 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
                 onConfirm={() => { onUpdate({ users: users.filter(u => u.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: '', name: ''}); }} 
                 onCancel={() => setDeleteConfig({isOpen: false, id: '', name: ''})} 
             />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in">
-                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in flex flex-col max-h-[80vh]">
+                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700 shrink-0">
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Administración de Usuarios</h2>
                     <button onClick={openCreate} className="bg-brand-600 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest flex items-center gap-2"><PlusIcon className="w-4 h-4"/> Nuevo Usuario</button>
                 </div>
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] border-b dark:border-slate-700">
-                        <tr><th className="p-4">Cód. Tienda</th><th className="p-4">Zona</th><th className="p-4">Nombre</th><th className="p-4">Departamento</th><th className="p-4">Grupo</th><th className="p-4">Ver PVP</th><th className="p-4 text-center">Acciones</th></tr>
-                    </thead>
-                    <tbody className="divide-y dark:divide-slate-700">
-                        {users.map(u => {
-                            const uPos = posList.find(p => p.zona === u.zona);
-                            return (
-                                <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                                    <td className="p-4 font-bold">{uPos?.código || '--'}</td>
-                                    <td className="p-4 font-medium">{u.zona}</td>
-                                    <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{u.nombre}</td>
-                                    <td className="p-4 text-slate-500">{u.departamento}</td>
-                                    <td className="p-4 text-slate-500">{u.grupo}</td>
-                                    <td className="p-4 font-bold">{u.verPVP ? 'SÍ' : 'NO'}</td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center gap-4">
-                                            <button onClick={() => openEdit(u)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
-                                            <button onClick={() => setDeleteConfig({isOpen: true, id: u.id, name: u.nombre})} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                <div className="overflow-auto custom-scrollbar">
+                    <table className="w-full text-left text-sm border-separate border-spacing-0">
+                        <thead className="sticky top-0 z-20 shadow-sm">
+                            <tr>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Cód. Tienda</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Nombre</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Departamento</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Grupo</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Ver PVP</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px] text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y dark:divide-slate-700">
+                            {users.map(u => {
+                                const uPos = posList.find(p => p.zona === u.zona);
+                                return (
+                                    <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                                        <td className="p-4 font-bold">{uPos?.código || '--'}</td>
+                                        <td className="p-4 font-medium">{u.zona}</td>
+                                        <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{u.nombre}</td>
+                                        <td className="p-4 text-slate-500">{u.departamento}</td>
+                                        <td className="p-4 text-slate-500">{u.grupo}</td>
+                                        <td className="p-4 font-bold">{u.verPVP ? 'SÍ' : 'NO'}</td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex justify-center gap-4">
+                                                <button onClick={() => openEdit(u)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
+                                                <button onClick={() => setDeleteConfig({isOpen: true, id: u.id, name: u.nombre})} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </>
     );
 };
-// ... resto del archivo sin cambios ... (manteniendo POSList, GroupsList, etc.)
+
 export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onUpdate }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingPOS, setEditingPOS] = useState<PointOfSale | null>(null);
@@ -390,33 +408,42 @@ export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onU
                 onConfirm={() => { onUpdate({ pos: pos.filter(p => p.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: '', name: ''}); }} 
                 onCancel={() => setDeleteConfig({isOpen: false, id: '', name: ''})} 
             />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in">
-                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in flex flex-col max-h-[80vh]">
+                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700 shrink-0">
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Administración de Puntos de Venta</h2>
                     <button onClick={openCreate} className="bg-brand-600 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest flex items-center gap-2"><PlusIcon className="w-4 h-4"/> Añadir Tienda</button>
                 </div>
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] border-b dark:border-slate-700">
-                        <tr><th className="p-4">Cód</th><th className="p-4">Zona</th><th className="p-4">Grupo</th><th className="p-4">Dirección</th><th className="p-4">Población</th><th className="p-4 text-center">Acciones</th></tr>
-                    </thead>
-                    <tbody className="divide-y dark:divide-slate-700">
-                        {pos.map(p => (
-                            <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                                <td className="p-4 font-bold">{p.código}</td>
-                                <td className="p-4 font-bold text-slate-700 dark:text-slate-200">{p.zona}</td>
-                                <td className="p-4 text-slate-500">{p.grupo}</td>
-                                <td className="p-4 text-slate-500 text-xs">{p.dirección}</td>
-                                <td className="p-4 text-slate-500">{p.población}</td>
-                                <td className="p-4 text-center">
-                                    <div className="flex justify-center gap-4">
-                                        <button onClick={() => openEdit(p)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
-                                        <button onClick={() => setDeleteConfig({isOpen: true, id: p.id, name: p.zona})} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
-                                    </div>
-                                </td>
+                <div className="overflow-auto custom-scrollbar">
+                    <table className="w-full text-left text-sm border-separate border-spacing-0">
+                        <thead className="sticky top-0 z-20 shadow-sm">
+                            <tr>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Cód</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Grupo</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Dirección</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Población</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px] text-center">Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y dark:divide-slate-700">
+                            {pos.map(p => (
+                                <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                                    <td className="p-4 font-bold">{p.código}</td>
+                                    <td className="p-4 font-bold text-slate-700 dark:text-slate-200">{p.zona}</td>
+                                    <td className="p-4 text-slate-500">{p.grupo}</td>
+                                    <td className="p-4 text-slate-500 text-xs">{p.dirección}</td>
+                                    <td className="p-4 text-slate-500">{p.población}</td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex justify-center gap-4">
+                                            <button onClick={() => openEdit(p)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
+                                            <button onClick={() => setDeleteConfig({isOpen: true, id: p.id, name: p.zona})} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </>
     );
@@ -550,12 +577,12 @@ export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ fam
                     </div>
                     
                     <div className="border-t dark:border-slate-700 max-h-[500px] overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] sticky top-0 z-10 shadow-sm">
+                        <table className="w-full text-left text-sm border-separate border-spacing-0">
+                            <thead className="sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th className="p-4 w-24 text-center">Código</th>
-                                    <th className="p-4">Descripción</th>
-                                    <th className="p-4 text-center w-32">Acciones</th>
+                                    <th className="p-4 w-24 text-center bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Código</th>
+                                    <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Descripción</th>
+                                    <th className="p-4 text-center w-32 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y dark:divide-slate-700">
@@ -579,6 +606,8 @@ export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ fam
         </>
     );
 };
+// ... resto del código sin cambios hasta ReportsInboxView ...
+// (La función normalizeHeader y parseCSV y DataUploadView se mantienen iguales)
 const normalizeHeader = (h: string): string => {
     const clean = h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/\./g, '');
     
@@ -808,24 +837,24 @@ export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: (u: Parti
                 onConfirm={() => { onUpdate({ reports: reports.filter(r => r.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: ''}); }} 
                 onCancel={() => setDeleteConfig({ isOpen: false, id: '' })} 
             />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden max-w-5xl mx-auto animate-fade-in">
-                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden max-w-5xl mx-auto animate-fade-in flex flex-col max-h-[80vh]">
+                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700 shrink-0">
                     <div className="flex items-center gap-3">
                         <MailIcon className="w-6 h-6 text-brand-600" />
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">Buzón de Reportes</h2>
                     </div>
                     <button onClick={onRefresh} className="bg-brand-50 hover:bg-brand-100 text-brand-600 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest border border-brand-200 transition-all">Actualizar</button>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-[10px] border-b dark:border-slate-700">
+                <div className="overflow-auto custom-scrollbar">
+                    <table className="w-full text-left text-sm border-separate border-spacing-0">
+                        <thead className="sticky top-0 z-20 shadow-sm">
                             <tr>
-                                <th className="p-4">Estado</th>
-                                <th className="p-4">Fecha</th>
-                                <th className="p-4">Supervisor</th>
-                                <th className="p-4">Zona</th>
-                                <th className="p-4">Tipo</th>
-                                <th className="p-4 text-center">Acciones</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Estado</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Fecha</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Supervisor</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Tipo</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px] text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-slate-700">
