@@ -1,11 +1,11 @@
 
 import React, { useContext, useState, useEffect } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import UserDashboard from './UserDashboard';
 import { getAppData } from '../services/dataService';
 import { AppData, PointOfSale } from '../types';
 import { ReadOnlyPOSList, ReadOnlyGroupsList, ReadOnlyUsersList } from './AdminViews';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import LogoutIcon from './icons/LogoutIcon';

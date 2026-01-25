@@ -1,6 +1,6 @@
 
 import React, { useContext, useState, useEffect, useMemo, memo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import Chatbot from './Chatbot';
 import ThemeToggle from './ThemeToggle';
 import SearchIcon from './icons/SearchIcon';
@@ -24,7 +24,6 @@ const formatCurrency = (value: string | number | undefined): string => {
     return num.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
 };
 
-// --- COMPONENTE OPTIMIZADO PARA INPUT DE NOTAS ---
 const NoteInput = memo(({ 
     initialValue, 
     onSave 
@@ -130,7 +129,6 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             const matchesSeccion = seccionFilter === 'Todas' || seccionStr === seccionFilter;
             if (!matchesSeccion) return false;
 
-            // Filtro por Familia
             if (familiaFilter !== 'Todas') {
                  const artFam = parseInt(art.Familia);
                  const filterFam = parseInt(familiaFilter);
@@ -142,7 +140,6 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             const ref = String(art.Referencia).trim();
             const articleTariffs = tariffsByArticle.get(ref) || [];
 
-            // LÓGICA FILTRO ZONA
             if (!isComparing && zonaFilter !== 'Todas') {
                 const t = articleTariffs.find(at => at.Tienda === zonaFilter);
                 if (!t) return false; 
@@ -257,7 +254,6 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     return (
         <div className="flex flex-col h-screen bg-[#f3f4f6] dark:bg-slate-950">
-            {/* Header: Añadido overflow-x-auto para permitir scroll horizontal en móviles */}
             <header className="bg-white dark:bg-slate-900 p-4 border-b dark:border-slate-800 flex items-center gap-4 shadow-sm z-40 overflow-x-auto min-h-[72px] whitespace-nowrap">
                  {onBack && <button onClick={onBack} className="flex-shrink-0"><ArrowLeftIcon className="w-5 h-5" /></button>}
                 <div className="relative flex-grow min-w-[200px]"><input type="text" placeholder="Buscar por descripción o referencia..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-800 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-brand-500" /><SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" /></div>
@@ -289,12 +285,10 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
             {isComparing && <div className="bg-white dark:bg-slate-800 p-2 flex flex-wrap gap-2 border-b dark:border-slate-700 shadow-sm z-30"><label className="flex items-center gap-2 text-sm px-2"><input type="checkbox" onChange={toggleAllZones} className="rounded text-brand-600"/> Todas las Zonas</label>{posList.map(p=><label key={p.id} className="flex items-center gap-2 text-sm px-2"><input type="checkbox" checked={selectedCompareZones.includes(p.zona)} onChange={()=>toggleZone(p.zona)} className="rounded text-brand-600"/>{p.zona}</label>)}</div>}
 
-            {/* CORRECCIÓN ROBUSTEZ: Eliminado p-4 del main para evitar huecos en el scroll sticky */}
             <main className="flex-1 overflow-auto bg-[#f3f4f6] dark:bg-slate-950 relative custom-scrollbar">
                 <table className="w-full text-left text-sm border-separate border-spacing-0">
                     <thead className="sticky top-0 z-[60] shadow-md">
                         <tr>
-                            {/* Aplicamos background SÓLIDO y OPACO (Blanco o Slate-900) para tapar el contenido al hacer scroll */}
                             <th className="p-3 bg-white dark:bg-slate-900 font-bold text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider border-b border-gray-200 dark:border-slate-700 sticky top-0">Cód.</th>
                             <th className="p-3 bg-white dark:bg-slate-900 font-bold text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider border-b border-gray-200 dark:border-slate-700 sticky top-0">Descripción</th>
                             {user?.rol !== 'Normal' && <th className="p-3 bg-white dark:bg-slate-900 font-bold text-slate-600 dark:text-slate-300 uppercase text-[10px] tracking-wider border-b border-gray-200 dark:border-slate-700 sticky top-0">Coste</th>}

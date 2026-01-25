@@ -1,29 +1,14 @@
 
-import React, { useState, createContext, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import LoginScreen from './components/LoginScreen';
 import { User, AppData } from './types';
 import { getAppData } from './services/dataService';
+import { AppContext } from './context/AppContext';
 
-// Importación Lazy para romper dependencias circulares con AppContext
+// Importación Lazy para optimizar carga y evitar ciclos
 const UserDashboard = React.lazy(() => import('./components/UserDashboard'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const SupervisorDashboard = React.lazy(() => import('./components/SupervisorDashboard'));
-
-interface AppContextType {
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-  user: User | null;
-  logout: () => void;
-  appData: AppData | null;
-}
-
-export const AppContext = createContext<AppContextType>({
-  theme: 'light',
-  toggleTheme: () => {},
-  user: null,
-  logout: () => {},
-  appData: null,
-});
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -61,7 +46,6 @@ const App: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
 
-    // TIMEOUT DE SEGURIDAD
     const safetyTimer = setTimeout(() => {
         setLoading((currentLoading) => {
             if (currentLoading) {
@@ -117,7 +101,6 @@ const App: React.FC = () => {
     }
 
     if (loadError && !appData) {
-        // Fallback si falla todo
         return (
             <div className="h-screen w-screen flex items-center justify-center bg-red-50 p-10">
                 <div className="text-center max-w-lg">

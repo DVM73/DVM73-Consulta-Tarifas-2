@@ -1,6 +1,6 @@
 
 import React, { useContext, useState, useEffect } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import { AdminView, AppData } from '../types';
 import { getAppData, saveAllData } from '../services/dataService';
 import ThemeToggle from './ThemeToggle';
