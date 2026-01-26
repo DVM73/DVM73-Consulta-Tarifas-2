@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, PointOfSale, Group, Report, AppData, UserRole, Departamento, Backup, Articulo, Tarifa, Family } from '../types';
 import EditIcon from './icons/EditIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -154,6 +154,20 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
         }); 
     }, []);
 
+    // Ordenar usuarios por Código de Tienda
+    const sortedUsers = useMemo(() => {
+        return [...users].sort((a, b) => {
+            const posA = posList.find(p => p.zona === a.zona);
+            const posB = posList.find(p => p.zona === b.zona);
+            // Usamos 'ZZZ' para que los que no tienen código (Admins/Supervisores) salgan al final
+            const codeA = posA?.código || 'ZZZ'; 
+            const codeB = posB?.código || 'ZZZ';
+            
+            // Intenta ordenar numéricamente si es posible para que 2 vaya antes que 10
+            return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+    }, [users, posList]);
+
     const handleZonaChange = (zona: string) => {
         const foundPos = posList.find(p => p.zona === zona);
         setFormData(prev => ({
@@ -283,7 +297,7 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
                             </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-slate-700">
-                            {users.map(u => {
+                            {sortedUsers.map(u => {
                                 const uPos = posList.find(p => p.zona === u.zona);
                                 return (
                                     <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
