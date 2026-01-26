@@ -15,7 +15,7 @@ import HelpIcon from './icons/HelpIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import { getAppData, saveAllData, overwriteAllData } from '../services/dataService';
 
-// --- VISTAS DE SOLO LECTURA PARA SUPERVISOR (Con Cabeceras Robustas) ---
+// --- VISTAS DE SOLO LECTURA PARA SUPERVISOR ---
 
 export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[] }> = ({ users, posList }) => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-h-[80vh] flex flex-col">
@@ -132,7 +132,6 @@ interface ViewProps {
 }
 
 export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUpdate }) => {
-    // ... [UsersList implementation remains the same] ...
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [posList, setPosList] = useState<PointOfSale[]>([]);
@@ -310,14 +309,8 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
         </>
     );
 };
-// ... [POSList, GroupsList, FamiliesList remain the same, just keeping them for context in file structure if needed, but for the XML update I only include changed parts or if the file is small enough] ...
-// To save space and adhere to "Keep updates as minimal", I will skip repeating the identical components POSList, GroupsList, FamiliesList unless you need them.
-// Wait, the prompt implies "Full content of file". I will include the rest of AdminViews as is, but focusing on the DataUploadView and parsing logic.
 
 export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onUpdate }) => {
-    // [Implementation identical to previous, just re-exporting]
-    // ... Copy of POSList content ...
-    // Since I must output full content, I will paste the full existing POSList implementation
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingPOS, setEditingPOS] = useState<PointOfSale | null>(null);
     const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '', name: '' });
@@ -457,59 +450,63 @@ export const POSList: React.FC<{ pos: PointOfSale[] } & ViewProps> = ({ pos, onU
 };
 
 export const GroupsList: React.FC<{ groups: Group[] } & ViewProps> = ({ groups, onUpdate }) => {
-    const [inputValue, setInputValue] = useState('');
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+    const [name, setName] = useState('');
     const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '', name: '' });
 
-    const handleAddOrUpdate = () => {
-        if (!inputValue.trim()) return;
+    const openCreate = () => { setEditingGroup(null); setName(''); setIsFormOpen(true); };
+    const openEdit = (g: Group) => { setEditingGroup(g); setName(g.nombre); setIsFormOpen(true); };
+
+    const handleSave = () => {
+        if (!name.trim()) return;
         let updated = [...groups];
-        if (editingId) updated = groups.map(g => g.id === editingId ? { ...g, nombre: inputValue } : g);
-        else updated.push({ id: Date.now().toString(), nombre: inputValue });
+        if (editingGroup) updated = groups.map(g => g.id === editingGroup.id ? { ...g, nombre: name } : g);
+        else updated.push({ id: Date.now().toString(), nombre: name });
         onUpdate({ groups: updated });
-        setInputValue('');
-        setEditingId(null);
+        setIsFormOpen(false);
     };
 
-    const startEdit = (g: Group) => {
-        setEditingId(g.id);
-        setInputValue(g.nombre);
-    };
+    if (isFormOpen) return (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 animate-fade-in max-w-lg mx-auto">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-tight">{editingGroup ? 'Editar Grupo' : 'Nuevo Grupo'}</h2>
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre del Grupo</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 border border-gray-200 dark:border-slate-700 rounded-lg dark:bg-slate-900 focus:border-brand-500 outline-none font-bold" />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                    <button onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 bg-gray-400 text-white font-bold rounded-lg uppercase text-xs tracking-widest">Cancelar</button>
+                    <button onClick={handleSave} className="px-6 py-2.5 bg-brand-600 text-white font-bold rounded-lg uppercase text-xs tracking-widest shadow-lg shadow-brand-600/20">Guardar</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <>
             <ConfirmModal 
                 isOpen={deleteConfig.isOpen} 
-                title="¿Desea eliminar el grupo?" 
-                message={`El grupo "${deleteConfig.name}" será borrado permanentemente.`} 
+                title="¿Eliminar Grupo?" 
+                message={`Se borrará el grupo "${deleteConfig.name}".`} 
                 onConfirm={() => { onUpdate({ groups: groups.filter(g => g.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: '', name: ''}); }} 
                 onCancel={() => setDeleteConfig({isOpen: false, id: '', name: ''})} 
             />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-2xl mx-auto overflow-hidden animate-fade-in">
-                <div className="p-6 border-b dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 uppercase font-bold text-sm tracking-widest text-slate-700 dark:text-white text-center">Grupos</div>
-                <div className="p-8">
-                    <div className="flex gap-3 mb-10 bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-200 dark:border-slate-700 shadow-inner">
-                        <input type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Nombre del grupo..." className="flex-1 p-3 dark:bg-slate-800 border-none outline-none font-bold text-slate-800 dark:text-white" />
-                        {!editingId ? (
-                            <button onClick={handleAddOrUpdate} className="bg-brand-600 text-white p-3.5 rounded-lg shadow-lg shadow-brand-600/20 active:scale-95 transition-all"><PlusIcon className="w-6 h-6 stroke-[3]"/></button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button onClick={handleAddOrUpdate} className="bg-green-600 text-white px-5 rounded-lg font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-green-600/10 hover:bg-green-700 transition-all">Guardar</button>
-                                <button onClick={() => {setEditingId(null); setInputValue('');}} className="bg-slate-500 text-white px-5 rounded-lg font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-slate-500/10 hover:bg-slate-600 transition-all">Cancelar</button>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-w-2xl mx-auto flex flex-col max-h-[80vh]">
+                <div className="p-6 flex justify-between items-center border-b dark:border-slate-700 shrink-0">
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Gestión de Grupos</h2>
+                    <button onClick={openCreate} className="bg-brand-600 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest flex items-center gap-2"><PlusIcon className="w-4 h-4"/> Nuevo Grupo</button>
+                </div>
+                <div className="overflow-auto custom-scrollbar p-4 divide-y dark:divide-slate-700">
+                    {groups.map(g => (
+                        <div key={g.id} className="py-4 flex justify-between items-center px-4 hover:bg-gray-50/50 dark:hover:bg-slate-900/30 transition-all rounded-lg">
+                            <span className="font-bold text-slate-700 dark:text-slate-200">{g.nombre}</span>
+                            <div className="flex gap-4">
+                                <button onClick={() => openEdit(g)} className="text-brand-600 hover:scale-110"><EditIcon className="w-4 h-4"/></button>
+                                <button onClick={() => setDeleteConfig({isOpen: true, id: g.id, name: g.nombre})} className="text-red-500 hover:scale-110"><TrashIcon className="w-4 h-4"/></button>
                             </div>
-                        )}
-                    </div>
-                    <div className="divide-y dark:divide-slate-700 border-t dark:border-slate-700">
-                        {groups.map(g => (
-                            <div key={g.id} className="py-4 flex justify-between items-center px-4 hover:bg-gray-50/50 dark:hover:bg-slate-900/30 rounded-xl transition-all">
-                                <span className="font-bold text-slate-700 dark:text-slate-200 text-sm tracking-wide">{g.nombre}</span>
-                                <div className="flex gap-6">
-                                    <button onClick={() => startEdit(g)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
-                                    <button onClick={() => setDeleteConfig({ isOpen: true, id: g.id, name: g.nombre })} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </>
@@ -517,399 +514,84 @@ export const GroupsList: React.FC<{ groups: Group[] } & ViewProps> = ({ groups, 
 };
 
 export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ families, onUpdate }) => {
-    const [form, setForm] = useState({ id: '', nombre: '' });
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingFamily, setEditingFamily] = useState<Family | null>(null);
+    const [formData, setFormData] = useState({ id: '', nombre: '' });
     const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '', name: '' });
 
-    const handleAddOrUpdate = () => {
-        if (!form.id.trim() || !form.nombre.trim()) return alert("El código y el nombre son obligatorios");
-        
-        if (!editingId && families.some(f => f.id === form.id)) {
-            return alert("Ya existe una familia con ese código.");
-        }
+    const openCreate = () => { setEditingFamily(null); setFormData({ id: '', nombre: '' }); setIsFormOpen(true); };
+    const openEdit = (f: Family) => { setEditingFamily(f); setFormData({ ...f }); setIsFormOpen(true); };
 
+    const handleSave = () => {
+        if (!formData.id || !formData.nombre) return;
         let updated = [...families];
-        if (editingId) {
-            updated = families.map(f => f.id === editingId ? { ...f, nombre: form.nombre } : f);
+        if (editingFamily) {
+             updated = families.map(f => f.id === editingFamily.id ? formData : f);
         } else {
-            updated.push({ id: form.id, nombre: form.nombre });
-            updated.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+             if (families.some(f => f.id === formData.id)) { alert("El código ya existe"); return; }
+             updated.push(formData);
         }
-        
+        updated.sort((a,b) => parseInt(a.id) - parseInt(b.id));
         onUpdate({ families: updated });
-        setForm({ id: '', nombre: '' });
-        setEditingId(null);
+        setIsFormOpen(false);
     };
 
-    const startEdit = (f: Family) => {
-        setEditingId(f.id);
-        setForm({ id: f.id, nombre: f.nombre });
-    };
+    if (isFormOpen) return (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 animate-fade-in max-w-lg mx-auto">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-tight">{editingFamily ? 'Editar Familia' : 'Nueva Familia'}</h2>
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Código (Ej: 05)</label>
+                    <input type="text" value={formData.id} disabled={!!editingFamily} onChange={e => setFormData({...formData, id: e.target.value})} className="w-full p-3 border border-gray-200 dark:border-slate-700 rounded-lg dark:bg-slate-900 focus:border-brand-500 outline-none font-bold" />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre</label>
+                    <input type="text" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full p-3 border border-gray-200 dark:border-slate-700 rounded-lg dark:bg-slate-900 focus:border-brand-500 outline-none font-bold" />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                    <button onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 bg-gray-400 text-white font-bold rounded-lg uppercase text-xs tracking-widest">Cancelar</button>
+                    <button onClick={handleSave} className="px-6 py-2.5 bg-brand-600 text-white font-bold rounded-lg uppercase text-xs tracking-widest shadow-lg shadow-brand-600/20">Guardar</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <>
             <ConfirmModal 
                 isOpen={deleteConfig.isOpen} 
-                title="¿Desea eliminar la familia?" 
-                message={`La familia "${deleteConfig.name}" será borrada. Esto puede afectar a artículos que la usen.`} 
+                title="¿Eliminar Familia?" 
+                message={`Se borrará la familia "${deleteConfig.name}".`} 
                 onConfirm={() => { onUpdate({ families: families.filter(f => f.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: '', name: ''}); }} 
                 onCancel={() => setDeleteConfig({isOpen: false, id: '', name: ''})} 
             />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-3xl mx-auto overflow-hidden animate-fade-in">
-                <div className="p-6 border-b dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 uppercase font-bold text-sm tracking-widest text-slate-700 dark:text-white text-center">Familias de Artículos</div>
-                <div className="p-8">
-                    <div className="flex gap-3 mb-10 bg-gray-50 dark:bg-slate-900 p-3 rounded-xl border border-gray-200 dark:border-slate-700 shadow-inner items-center">
-                        <input 
-                            type="text" 
-                            value={form.id} 
-                            onChange={e => setForm({...form, id: e.target.value})} 
-                            placeholder="Cód (ej: 05)" 
-                            className="w-24 p-3 dark:bg-slate-800 border-none outline-none font-bold text-slate-800 dark:text-white text-center disabled:opacity-50"
-                            disabled={!!editingId} 
-                        />
-                        <div className="h-8 w-px bg-gray-300 dark:bg-slate-700"></div>
-                        <input 
-                            type="text" 
-                            value={form.nombre} 
-                            onChange={e => setForm({...form, nombre: e.target.value})} 
-                            placeholder="Descripción de la familia..." 
-                            className="flex-1 p-3 dark:bg-slate-800 border-none outline-none font-bold text-slate-800 dark:text-white" 
-                        />
-                        {!editingId ? (
-                            <button onClick={handleAddOrUpdate} className="bg-brand-600 text-white p-3.5 rounded-lg shadow-lg shadow-brand-600/20 active:scale-95 transition-all"><PlusIcon className="w-6 h-6 stroke-[3]"/></button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button onClick={handleAddOrUpdate} className="bg-green-600 text-white px-5 rounded-lg font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-green-600/10 hover:bg-green-700 transition-all">Guardar</button>
-                                <button onClick={() => {setEditingId(null); setForm({id:'', nombre:''});}} className="bg-slate-500 text-white px-5 rounded-lg font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-slate-500/10 hover:bg-slate-600 transition-all">Cancelar</button>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="border-t dark:border-slate-700 max-h-[500px] overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-left text-sm border-separate border-spacing-0">
-                            <thead className="sticky top-0 z-20 shadow-sm">
-                                <tr>
-                                    <th className="p-4 w-24 text-center bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Código</th>
-                                    <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Descripción</th>
-                                    <th className="p-4 text-center w-32 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y dark:divide-slate-700">
-                                {families.map(f => (
-                                    <tr key={f.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/30 transition-colors group">
-                                        <td className="p-4 font-mono font-bold text-slate-500 text-center bg-gray-50/30 dark:bg-slate-800/30">{f.id}</td>
-                                        <td className="p-4 font-bold text-slate-700 dark:text-slate-200">{f.nombre}</td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => startEdit(f)} className="text-brand-600 hover:scale-125 transition-all"><EditIcon className="w-5 h-5"/></button>
-                                                <button onClick={() => setDeleteConfig({ isOpen: true, id: f.id, name: f.nombre })} className="text-red-500 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-};
-
-// ===================== LOGICA CSV =====================
-
-const normalizeHeader = (h: string): string => {
-    const clean = h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/\./g, '');
-    
-    if (clean.includes('referencia') || clean === 'ref') return 'Referencia';
-    if (clean.includes('seccion') || clean.includes('sección')) return 'Sección';
-    if (clean.includes('descripcion') || clean.includes('descripción') || clean === 'desc') return 'Descripción';
-    if (clean.includes('familia')) return 'Familia';
-    if (clean.includes('ult') && (clean.includes('costo') || clean.includes('coste'))) return 'Ult. Costo';
-    if (clean.includes('ult') && clean.includes('pro')) return 'Ult.Pro';
-    if (clean === 'iva') return 'IVA';
-    
-    // NUEVA COLUMNA: Uni.Med (P/U)
-    if (clean.includes('uni') && (clean.includes('med') || clean.includes('met') || clean.includes('unidad'))) return 'UniMed';
-    
-    if (clean === 'cod' || clean === 'código') return 'Cod.';
-    if (clean.includes('tienda') || clean.includes('centro')) return 'Tienda';
-    if (clean.includes('cod') && clean.includes('art')) return 'Cód. Art.';
-    if (clean === 'pvp' || clean === 'p.v.p.') return 'P.V.P.';
-    if (clean.includes('oferta') && clean.includes('pvp')) return 'PVP Oferta';
-    if (clean.includes('ini') && clean.includes('ofe')) return 'Fec.Ini.Ofe.';
-    if (clean.includes('fin') && clean.includes('ofe')) return 'Fec.Fin.Ofe.';
-
-    return h.trim().replace(/^"|"$/g, '');
-};
-
-const parseCSV = (content: string): any[] => {
-    const lines = content.split('\n').filter(l => l.trim());
-    if (lines.length === 0) return [];
-    const separator = lines[0].includes(';') ? ';' : ',';
-    const rawHeaders = lines[0].split(separator);
-    const headers = rawHeaders.map(normalizeHeader);
-    
-    return lines.slice(1).map(line => {
-        const values = line.split(separator);
-        const obj: any = {};
-        headers.forEach((h, i) => {
-            let val = values[i]?.trim() || '';
-            val = val.replace(/^"|"$/g, '');
-            if (h) obj[h] = val;
-        });
-        return obj;
-    });
-};
-
-export const DataUploadView: React.FC = () => {
-    const [pendingArticulos, setPendingArticulos] = useState<Articulo[] | null>(null);
-    const [pendingTarifas, setPendingTarifas] = useState<Tarifa[] | null>(null);
-    const [updating, setUpdating] = useState(false);
-    const [success, setSuccess] = useState(false);
-    
-    const fileArticulosRef = useRef<HTMLInputElement>(null);
-    const fileTarifasRef = useRef<HTMLInputElement>(null);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'art' | 'tar') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const text = event.target?.result as string;
-                const parsed = parseCSV(text);
-                
-                if (type === 'art') {
-                    if (parsed.length > 0 && !parsed[0].Referencia) {
-                         alert("⚠️ Advertencia: No se detectó la columna 'Referencia'. Revisa las cabeceras del CSV.");
-                    }
-                    setPendingArticulos(parsed as Articulo[]);
-                } else {
-                    if (parsed.length > 0 && (!parsed[0].Tienda && !parsed[0]['Cód. Art.'])) {
-                         alert("⚠️ Advertencia: No se detectaron columnas clave (Tienda, Cód. Art.). Revisa el CSV.");
-                    }
-                    setPendingTarifas(parsed as Tarifa[]);
-                }
-            } catch (error) {
-                console.error("Error parsing CSV", error);
-                alert("Error al leer el archivo CSV. Asegúrate de que el formato sea correcto.");
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleUpdate = async () => {
-        if (!pendingArticulos && !pendingTarifas) return;
-        setUpdating(true);
-        try {
-            const updates: Partial<AppData> = {};
-            if (pendingArticulos) updates.articulos = pendingArticulos;
-            if (pendingTarifas) updates.tarifas = pendingTarifas;
-            await saveAllData(updates);
-            setSuccess(true);
-            setTimeout(() => setSuccess(false), 5000);
-            setPendingArticulos(null);
-            setPendingTarifas(null);
-            if (fileArticulosRef.current) fileArticulosRef.current.value = '';
-            if (fileTarifasRef.current) fileTarifasRef.current.value = '';
-        } catch (error) {
-            console.error("Error saving data", error);
-            alert("Hubo un error al guardar los datos en la base de datos.");
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const canUpdate = (pendingArticulos !== null || pendingTarifas !== null);
-
-    return (
-        <div className="bg-white dark:bg-slate-800 p-12 rounded-xl shadow-md border border-gray-100 dark:border-slate-700 max-w-4xl mx-auto text-center animate-fade-in">
-            <div className="flex flex-col items-center mb-10">
-                <UploadIcon className="w-12 h-12 text-brand-500 mb-4 stroke-[1.5]" />
-                <h2 className="text-lg font-bold text-slate-800 dark:text-white">Carga de Datos</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                <div className={`border-2 border-dashed rounded-xl p-8 transition-colors flex flex-col items-center justify-center min-h-[160px] ${pendingArticulos ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-slate-700'}`}>
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-4">Archivo de Artículos (CSV)</p>
-                    <button onClick={() => fileArticulosRef.current?.click()} className="bg-brand-50 text-brand-600 px-6 py-2 rounded-lg font-bold text-xs shadow-sm hover:bg-brand-100 transition-all border border-brand-200">Seleccionar Archivo</button>
-                    <input type="file" ref={fileArticulosRef} className="hidden" accept=".csv,.txt" onChange={(e) => handleFileChange(e, 'art')} />
-                    <div className="mt-4 flex items-center gap-2">
-                        {pendingArticulos ? (
-                            <span className="text-green-600 font-bold text-xs flex items-center gap-1.5 animate-fade-in">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                                {pendingArticulos.length} artículos leídos
-                            </span>
-                        ) : (
-                            <span className="text-gray-400 text-xs font-medium">Ningún archivo cargado</span>
-                        )}
-                    </div>
-                </div>
-
-                <div className={`border-2 border-dashed rounded-xl p-8 transition-colors flex flex-col items-center justify-center min-h-[160px] ${pendingTarifas ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-slate-700'}`}>
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-4">Archivo de Tarifas (CSV)</p>
-                    <button onClick={() => fileTarifasRef.current?.click()} className="bg-brand-50 text-brand-600 px-6 py-2 rounded-lg font-bold text-xs shadow-sm hover:bg-brand-100 transition-all border border-brand-200">Seleccionar Archivo</button>
-                    <input type="file" ref={fileTarifasRef} className="hidden" accept=".csv,.txt" onChange={(e) => handleFileChange(e, 'tar')} />
-                    <div className="mt-4 flex items-center gap-2">
-                        {pendingTarifas ? (
-                            <span className="text-green-600 font-bold text-xs flex items-center gap-1.5 animate-fade-in">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                                {pendingTarifas.length} tarifas leídos
-                            </span>
-                        ) : (
-                            <span className="text-gray-400 text-xs font-medium">Ningún archivo cargado</span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <button 
-                onClick={handleUpdate}
-                disabled={!canUpdate || updating}
-                className={`w-full max-sm mx-auto py-4 rounded-lg font-bold uppercase text-xs tracking-widest transition-all shadow-lg ${canUpdate ? 'bg-brand-500 text-white shadow-brand-500/20 hover:bg-brand-600 active:scale-95' : 'bg-slate-400 text-white cursor-not-allowed opacity-80'}`}
-            >
-                {updating ? 'Procesando y Guardando...' : 'ACTUALIZAR BASE DE DATOS'}
-            </button>
-
-            {success && (
-                <div className="mt-8 bg-green-100 border border-green-200 text-green-700 px-6 py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-3 animate-fade-in">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Base de datos actualizada correctamente.
-                </div>
-            )}
-        </div>
-    );
-};
-export const DataExportView: React.FC = () => {
-    // ... [DataExportView remains same] ...
-    const handleDownload = async () => {
-        try {
-            const data = await getAppData();
-            const jsonString = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const now = new Date();
-            const filename = `backup_tarifas_${now.toISOString().split('T')[0]}.json`;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            alert("Error al exportar los datos.");
-        }
-    };
-
-    return (
-        <div className="bg-white dark:bg-slate-800 p-12 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-lg mx-auto text-center animate-fade-in">
-            <div className="flex flex-col items-center">
-                <UploadIcon className="w-16 h-16 text-green-500 mb-6 stroke-[1.5]" />
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Exportar Base de Datos</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mb-10 leading-relaxed max-w-xs mx-auto">
-                    Descarga una copia completa de la base de datos actual en formato JSON.
-                </p>
-                <button 
-                    onClick={handleDownload}
-                    className="bg-[#22c55e] hover:bg-green-600 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md shadow-green-500/20 active:scale-95"
-                >
-                    Descargar Copia
-                </button>
-            </div>
-        </div>
-    );
-};
-export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: (u: Partial<AppData>) => void, onRefresh: () => void }> = ({ reports, onUpdate, onRefresh }) => {
-    // ... [ReportsInboxView remains same] ...
-    const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '' });
-
-    const handleDownload = (report: Report) => {
-        const blob = new Blob([report.csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reporte_${report.supervisorName}_${report.date.replace(/[/:\s]/g, '_')}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        if (!report.read) {
-            const updatedReports = reports.map(r => r.id === report.id ? { ...r, read: true } : r);
-            onUpdate({ reports: updatedReports });
-        }
-    };
-
-    return (
-        <>
-            <ConfirmModal 
-                isOpen={deleteConfig.isOpen} 
-                title="¿Desea borrar este reporte?" 
-                message="Esta acción eliminará permanentemente el reporte del buzón." 
-                onConfirm={() => { onUpdate({ reports: reports.filter(r => r.id !== deleteConfig.id) }); setDeleteConfig({isOpen: false, id: ''}); }} 
-                onCancel={() => setDeleteConfig({ isOpen: false, id: '' })} 
-            />
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden max-w-5xl mx-auto animate-fade-in flex flex-col max-h-[80vh]">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-w-3xl mx-auto flex flex-col max-h-[80vh]">
                 <div className="p-6 flex justify-between items-center border-b dark:border-slate-700 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <MailIcon className="w-6 h-6 text-brand-600" />
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">Buzón de Reportes</h2>
-                    </div>
-                    <button onClick={onRefresh} className="bg-brand-50 hover:bg-brand-100 text-brand-600 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest border border-brand-200 transition-all">Actualizar</button>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Familias de Artículos</h2>
+                    <button onClick={openCreate} className="bg-brand-600 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest flex items-center gap-2"><PlusIcon className="w-4 h-4"/> Nueva Familia</button>
                 </div>
                 <div className="overflow-auto custom-scrollbar">
                     <table className="w-full text-left text-sm border-separate border-spacing-0">
                         <thead className="sticky top-0 z-20 shadow-sm">
                             <tr>
-                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Estado</th>
-                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Fecha</th>
-                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Supervisor</th>
-                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Zona</th>
-                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Tipo</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px]">Cód</th>
+                                <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px] w-full">Descripción</th>
                                 <th className="p-4 bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-slate-500 font-bold uppercase text-[10px] text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y dark:divide-slate-700">
-                            {reports.length === 0 ? (
-                                <tr><td colSpan={6} className="p-24 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">No hay reportes nuevos</td></tr>
-                            ) : (
-                                reports.map(report => (
-                                    <tr key={report.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
-                                        <td className="p-4">
-                                            {report.read ? (
-                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 border border-green-100 rounded-full text-[10px] font-bold uppercase">
-                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                                                    DESCARGADO
-                                                </div>
-                                            ) : (
-                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-slate-400 border border-gray-200 rounded-full text-[10px] font-bold uppercase">
-                                                    <div className="w-2 h-2 rounded-full border border-dashed border-current"></div>
-                                                    PENDIENTE
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="p-4 font-medium whitespace-nowrap text-slate-600 dark:text-slate-300">{report.date}</td>
-                                        <td className="p-4 font-bold text-slate-800 dark:text-slate-100">{report.supervisorName}</td>
-                                        <td className="p-4 text-slate-600 dark:text-slate-400">{report.zoneFilter}</td>
-                                        <td className="p-4">
-                                            {report.type === 'Solo Notas' ? (
-                                                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">Solo Notas</span>
-                                            ) : (
-                                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">Completo</span>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex justify-center gap-6">
-                                                <button onClick={() => handleDownload(report)} className={`${report.read ? 'text-slate-300 cursor-not-allowed' : 'text-green-500 hover:scale-125'} transition-all`}><UploadIcon className="w-5 h-5"/></button>
-                                                <button onClick={() => setDeleteConfig({isOpen: true, id: report.id})} className="text-red-400 hover:scale-125 transition-all"><TrashIcon className="w-5 h-5"/></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                            {families.map(f => (
+                                <tr key={f.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50 transition-colors">
+                                    <td className="p-4 font-mono font-bold text-slate-500">{f.id}</td>
+                                    <td className="p-4 font-bold text-slate-800 dark:text-slate-200">{f.nombre}</td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex justify-center gap-4">
+                                            <button onClick={() => openEdit(f)} className="text-brand-600 hover:scale-110"><EditIcon className="w-4 h-4"/></button>
+                                            <button onClick={() => setDeleteConfig({isOpen: true, id: f.id, name: f.nombre})} className="text-red-500 hover:scale-110"><TrashIcon className="w-4 h-4"/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -917,153 +599,250 @@ export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: (u: Parti
         </>
     );
 };
-export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onUpdate: (u: Partial<AppData>) => void }> = ({ backups, currentData, onUpdate }) => {
-    // ... [BackupView remains same] ...
-    const [backupName, setBackupName] = useState('');
-    const [restoring, setRestoring] = useState(false);
 
-    const handleCreateBackup = async () => {
-        if (!backupName.trim()) return;
-        const newBackup: Backup = {
-            id: Date.now().toString(),
-            nombre: backupName,
-            data: { ...currentData, backups: [] },
-            fecha: new Date().toLocaleString()
-        };
-        const updatedBackups = [newBackup, ...backups];
-        onUpdate({ backups: updatedBackups });
-        setBackupName('');
-    };
+export const DataUploadView: React.FC = () => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadType, setUploadType] = useState<'articulos' | 'tarifas'>('articulos');
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState('');
 
-    const handleRestoreBackup = async (backup: Backup) => {
-        if (!window.confirm(`¿Estás seguro de que quieres restaurar el punto "${backup.nombre}"? Esto sobrescribirá todos los datos actuales.`)) return;
-        setRestoring(true);
-        try {
-            const restoredData = { ...backup.data, backups: backups };
-            await overwriteAllData(restoredData);
-            window.location.reload(); 
-        } catch (e) {
-            alert("Error en restauración.");
-            setRestoring(false);
+    const processFile = (content: string) => {
+        const lines = content.split(/\r\n|\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) return [];
+
+        const headers = lines[0].split(';').map(h => h.trim().replace(/^"|"$/g, ''));
+        const result = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            // Separa por punto y coma, pero ten cuidado si las comillas contienen punto y coma (aunque en este caso es simple)
+            const row = lines[i].split(';');
+            if (row.length < headers.length) continue;
+
+            const obj: any = {};
+            headers.forEach((h, index) => {
+                let val = row[index] ? row[index].trim() : '';
+                // Limpiar comillas extras que traen los números del CSV (ej: "3,41 ")
+                val = val.replace(/^"|"$/g, '').trim();
+                
+                // Mapeo específico para la columna problemática Uni.Med
+                if (h === 'Uni.Med') {
+                    obj['UniMed'] = val;
+                } else {
+                    obj[h] = val;
+                }
+            });
+            result.push(obj);
         }
+        return result;
     };
 
-    const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!window.confirm('⚠️ ATENCIÓN: Se borrarán los datos actuales para cargar los del archivo. ¿Deseas proceder?')) {
-            e.target.value = ''; 
-            return;
-        }
-        setRestoring(true);
+
+        setLoading(true);
+        setStatus('Procesando archivo...');
+
         const reader = new FileReader();
-        reader.onload = async (event) => {
+        reader.onload = async (evt) => {
             try {
-                const json = JSON.parse(event.target?.result as string);
-                await overwriteAllData(json as AppData);
-                window.location.reload();
-            } catch (err) { 
-                alert('Archivo inválido o corrupto.'); 
-                setRestoring(false); 
-                e.target.value = ''; 
+                const text = evt.target?.result as string;
+                const data = processFile(text);
+                
+                if (data.length === 0) throw new Error("El archivo parece estar vacío o tiene formato incorrecto.");
+
+                if (uploadType === 'articulos') {
+                    // Validar estructura básica
+                    if (!data[0].Referencia) throw new Error("Falta columna 'Referencia'.");
+                    await saveAllData({ articulos: data as Articulo[] });
+                    setStatus(`✅ Se han actualizado ${data.length} artículos correctamente.`);
+                } else {
+                    if (!data[0].Tienda) throw new Error("Falta columna 'Tienda'.");
+                    await saveAllData({ tarifas: data as Tarifa[] });
+                    setStatus(`✅ Se han actualizado ${data.length} tarifas correctamente.`);
+                }
+            } catch (err: any) {
+                console.error(err);
+                setStatus(`❌ Error: ${err.message}`);
+            } finally {
+                setLoading(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
             }
         };
-        reader.readAsText(file);
+        reader.readAsText(file, 'ISO-8859-1'); // Codificación típica de CSV excel español
     };
 
-    if (restoring) return (
-        <div className="h-40 flex flex-col items-center justify-center gap-4">
-            <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-bold text-brand-600 animate-pulse uppercase tracking-widest">Restaurando Sistema...</p>
+    return (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 animate-fade-in max-w-2xl mx-auto text-center">
+            <div className="w-20 h-20 bg-brand-50 dark:bg-brand-900/20 rounded-full flex items-center justify-center text-brand-600 mb-6 mx-auto">
+                <UploadIcon className="w-10 h-10" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2 uppercase tracking-tight">Carga de Datos CSV</h2>
+            <p className="text-slate-500 mb-8">Actualiza el catálogo de artículos o las tarifas vigentes.</p>
+            
+            <div className="flex justify-center gap-4 mb-8">
+                <button onClick={() => setUploadType('articulos')} className={`px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all border-2 ${uploadType === 'articulos' ? 'border-brand-600 text-brand-600 bg-brand-50 dark:bg-brand-900/30' : 'border-transparent bg-gray-100 dark:bg-slate-900 text-slate-500'}`}>Artículos</button>
+                <button onClick={() => setUploadType('tarifas')} className={`px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all border-2 ${uploadType === 'tarifas' ? 'border-brand-600 text-brand-600 bg-brand-50 dark:bg-brand-900/30' : 'border-transparent bg-gray-100 dark:bg-slate-900 text-slate-500'}`}>Tarifas</button>
+            </div>
+
+            <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-10 hover:bg-gray-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer relative">
+                <input 
+                    type="file" 
+                    accept=".csv" 
+                    ref={fileInputRef}
+                    onChange={handleFileUpload} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={loading}
+                />
+                <p className="font-bold text-slate-600 dark:text-slate-300">
+                    {loading ? 'Procesando...' : `Haz clic para subir CSV de ${uploadType}`}
+                </p>
+                <p className="text-xs text-slate-400 mt-2">Formato: CSV delimitado por punto y coma (;)</p>
+            </div>
+
+            {status && (
+                <div className={`mt-6 p-4 rounded-lg text-sm font-bold ${status.startsWith('✅') ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {status}
+                </div>
+            )}
         </div>
     );
+};
+
+export const DataExportView: React.FC = () => {
+    const handleExport = async () => {
+        const data = await getAppData();
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const href = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = href;
+        link.download = `backup_sistema_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-2xl mx-auto animate-fade-in overflow-hidden">
-            <div className="p-10 text-center flex flex-col items-center">
-                <div className="text-[#2563eb] mb-4">
-                    <HistoryIcon className="w-16 h-16 stroke-[1.5]" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-8 uppercase tracking-widest">Puntos de Restauración</h2>
-                <div className="w-full flex gap-2 mb-10">
-                    <input type="text" value={backupName} onChange={e => setBackupName(e.target.value)} placeholder="Nombre del backup" className="flex-1 p-3 border border-gray-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 dark:bg-slate-900 font-medium" />
-                    <button onClick={handleCreateBackup} className="bg-[#2563eb] hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md active:scale-95 uppercase tracking-tight">Crear</button>
-                </div>
-                <div className="w-full space-y-4">
-                    {backups.length > 0 ? (
-                        backups.map(backup => (
-                            <div key={backup.id} className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-slate-900/30 rounded-xl border border-gray-100 dark:border-slate-700 group hover:shadow-md transition-all">
-                                <span className="font-bold text-slate-700 dark:text-slate-200 text-sm tracking-tight">{backup.nombre}</span>
-                                <div className="flex gap-2">
-                                    <button onClick={() => handleRestoreBackup(backup)} className="bg-[#eab308] hover:bg-yellow-600 text-white px-5 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95">Restaurar</button>
-                                    <button onClick={() => onUpdate({ backups: backups.filter(b => b.id !== backup.id) })} className="bg-[#ef4444] hover:bg-red-600 text-white px-5 py-2 rounded-lg font-bold text-xs shadow-md transition-all active:scale-95">Borrar</button>
-                                </div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 animate-fade-in max-w-lg mx-auto text-center">
+            <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center text-indigo-600 mb-6 mx-auto">
+                <ExportIcon className="w-10 h-10" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2 uppercase tracking-tight">Exportar Base de Datos</h2>
+            <p className="text-slate-500 mb-8">Descarga una copia completa de todos los datos en formato JSON.</p>
+            <button onClick={handleExport} className="w-full bg-brand-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3">
+                <ExportIcon className="w-5 h-5"/> Descargar Copia JSON
+            </button>
+        </div>
+    );
+};
+
+export const ReportsInboxView: React.FC<{ reports: Report[], onUpdate: any, onRefresh: any }> = ({ reports, onUpdate, onRefresh }) => {
+    const markAsRead = (r: Report) => {
+        const updated = reports.map(rep => rep.id === r.id ? { ...rep, read: true } : rep);
+        onUpdate({ reports: updated });
+    };
+
+    const downloadCSV = (r: Report) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([r.csvContent], { type: 'text/csv;charset=utf-8;' }));
+        link.download = `reporte_${r.supervisorName}_${r.date.replace(/\//g,'-')}.csv`;
+        link.click();
+        markAsRead(r);
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b dark:border-slate-700 shrink-0 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Buzón de Reportes</h2>
+                <button onClick={onRefresh} className="text-brand-600 hover:text-brand-800 text-xs font-bold uppercase tracking-widest">Actualizar</button>
+            </div>
+            <div className="overflow-auto custom-scrollbar p-4 space-y-3">
+                {reports.length === 0 && <div className="text-center p-10 text-slate-400 italic">No hay reportes recibidos.</div>}
+                {reports.map(r => (
+                    <div key={r.id} className={`p-5 rounded-xl border transition-all flex justify-between items-center ${r.read ? 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-700 opacity-70' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 shadow-sm'}`}>
+                        <div>
+                            <div className="flex items-center gap-3 mb-1">
+                                {!r.read && <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>}
+                                <h4 className="font-bold text-slate-800 dark:text-slate-200">{r.supervisorName}</h4>
+                                <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 font-bold uppercase">{r.type}</span>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-slate-400 text-sm italic font-medium py-4">No hay puntos de restauración guardados.</p>
-                    )}
+                            <p className="text-xs text-slate-500 mb-1">Zona: <span className="font-bold">{r.zoneFilter}</span> • {r.date}</p>
+                        </div>
+                        <button onClick={() => downloadCSV(r)} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-brand-50 dark:hover:bg-slate-700 hover:text-brand-600 hover:border-brand-200 transition-all flex items-center gap-2">
+                            <ExportIcon className="w-4 h-4"/> Descargar CSV
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export const BackupView: React.FC<{ backups: Backup[], currentData: AppData, onUpdate: any }> = ({ backups, currentData, onUpdate }) => {
+    const createBackup = () => {
+        const newBackup: Backup = {
+            id: Date.now().toString(),
+            nombre: `Backup ${new Date().toLocaleString()}`,
+            fecha: new Date().toLocaleString(),
+            data: currentData
+        };
+        onUpdate({ backups: [newBackup, ...backups] });
+    };
+
+    const restoreBackup = (b: Backup) => {
+        if (confirm("¿Estás seguro? Se sobrescribirán todos los datos actuales con esta copia.")) {
+            overwriteAllData(b.data);
+            alert("Sistema restaurado. Se recargará la página.");
+            window.location.reload();
+        }
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 text-center h-fit">
+                <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center text-green-600 mb-4 mx-auto">
+                    <HistoryIcon className="w-8 h-8" />
                 </div>
-                <div className="mt-12 pt-8 border-t dark:border-slate-700 w-full">
-                    <label 
-                        htmlFor="restore-file-input" 
-                        className="cursor-pointer text-brand-600 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:bg-brand-50 px-6 py-3 rounded-lg transition-all border border-transparent hover:border-brand-200"
-                    >
-                        <UploadIcon className="w-5 h-5" /> Cargar archivo de copia externa
-                    </label>
-                    <input 
-                        id="restore-file-input" 
-                        type="file" 
-                        className="hidden" 
-                        accept=".json" 
-                        onClick={(e) => (e.currentTarget.value = '')} 
-                        onChange={handleImportBackup} 
-                    />
+                <h3 className="font-bold text-slate-800 dark:text-white mb-2">Crear Punto de Restauración</h3>
+                <p className="text-xs text-slate-500 mb-6">Guarda el estado actual del sistema antes de hacer cambios importantes.</p>
+                <button onClick={createBackup} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-green-600/20 transition-all">Crear Backup Ahora</button>
+            </div>
+            <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-[600px]">
+                <div className="p-6 border-b dark:border-slate-700 font-bold uppercase text-sm tracking-widest text-slate-700 dark:text-white">Historial de Copias</div>
+                <div className="overflow-auto custom-scrollbar p-4 space-y-3">
+                    {backups.length === 0 && <div className="text-center p-10 text-slate-400 italic">No hay copias de seguridad.</div>}
+                    {backups.map(b => (
+                        <div key={b.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-gray-100 dark:border-slate-700">
+                            <div>
+                                <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{b.nombre}</h4>
+                                <p className="text-xs text-slate-400">{b.fecha}</p>
+                            </div>
+                            <button onClick={() => restoreBackup(b)} className="text-xs font-bold text-brand-600 hover:underline uppercase tracking-widest">Restaurar</button>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
     );
 };
-export const SettingsView: React.FC<{companyName?: string, onUpdate: (u: Partial<AppData>) => void}> = ({companyName, onUpdate}) => {
-    // ... [SettingsView remains same] ...
+
+export const SettingsView: React.FC<{ companyName?: string, onUpdate: any }> = ({ companyName, onUpdate }) => {
     const [name, setName] = useState(companyName || '');
-    const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        setName(companyName || '');
-    }, [companyName]);
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            await onUpdate({ companyName: name });
-            alert("✅ Configuración guardada.");
-        } catch (e) {
-            alert("❌ Error al guardar.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
+    
     return (
-        <div className="bg-white dark:bg-slate-900 max-w-[500px] mx-auto rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 animate-fade-in overflow-hidden">
-            <div className="p-10 flex flex-col items-center">
-                <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-8">
-                    <SparklesIcon className="w-7 h-7" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 max-w-lg mx-auto">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                <SettingsIcon className="w-6 h-6 text-slate-400"/> Configuración General
+            </h2>
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre de la Empresa</label>
+                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 border border-gray-200 dark:border-slate-700 rounded-lg dark:bg-slate-900 focus:border-brand-500 outline-none font-bold" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-10 tracking-tight uppercase tracking-widest">Configuración General</h2>
-                <div className="w-full space-y-8">
-                    <div className="space-y-3 text-left">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">Nombre de la Empresa</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3.5 border border-gray-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 dark:bg-slate-950 font-bold transition-all" />
-                    </div>
-                    
-                    <div className="space-y-4 pt-4">
-                        <button type="button" onClick={handleSave} disabled={isSaving} className="w-full bg-[#4f46e5] hover:bg-brand-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg disabled:opacity-70 uppercase text-xs tracking-widest">
-                            <SparklesIcon className="w-4 h-4" /> {isSaving ? 'Guardando...' : 'Guardar Configuración'}
-                        </button>
-                    </div>
-                </div>
+                <button onClick={() => onUpdate({ companyName: name })} className="w-full bg-brand-600 text-white font-bold py-3 rounded-lg uppercase text-xs tracking-widest shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all mt-4">
+                    Guardar Cambios
+                </button>
             </div>
         </div>
     );

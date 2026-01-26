@@ -24,6 +24,16 @@ const UserDashboard = React.lazy(() => import('./UserDashboard'));
 
 type SupervisorView = 'menu' | 'tarifas' | 'pos' | 'users' | 'groups' | 'inventarios' | 'tarifas_impreso';
 
+// MAPA DE NOMBRES REALES DE TIENDAS (Hardcoded según instrucciones)
+const REAL_SHOP_NAMES: Record<string, string> = {
+    'ATA': 'Carnicería El Buen Corte',
+    'TO3': 'Carnicería Villalba',
+    'EC2': 'Carnicería Medina',
+    'CH1': 'Carnicería La Plaza',
+    'ZN1': 'Carnicería Central',
+    // Se pueden añadir más aquí o mover a configuración en el futuro
+};
+
 const SupervisorDashboard: React.FC = () => {
   const { user, logout } = useContext(AppContext);
   const [view, setView] = useState<SupervisorView>('menu');
@@ -178,7 +188,7 @@ const SupervisorDashboard: React.FC = () => {
         });
   };
 
-  // --- LÓGICA DE GENERACIÓN DE TARIFAS (CORREGIDA) ---
+  // --- LÓGICA DE GENERACIÓN DE TARIFAS (CORREGIDA V2) ---
   const handleGenerateTariff = () => {
       if (!tarPosId) {
           alert("⚠️ Selecciona una tienda válida.");
@@ -190,15 +200,15 @@ const SupervisorDashboard: React.FC = () => {
 
       try {
         const doc = new jsPDF();
-        const companyName = data?.companyName || "Paraíso de la Carne Selección, S.L.U.";
+        const companyName = data?.companyName || "PARAÍSO DE LA CARNE SELECCIÓN, S.L.U.";
         const fechaRev = new Date(tarRevisionDate).toLocaleDateString('es-ES');
         const showPvp = tarShowPvp === 'Si';
 
-        // 1. OBTENER NOMBRE DEL GRUPO (CABECERA)
-        // Se usa el campo 'grupo' del punto de venta seleccionado
-        const grupoTienda = selectedPos.grupo || "GRUPO NO ASIGNADO";
+        // 1. OBTENER NOMBRE REAL DE TIENDA (Punto 2)
+        // Usamos el mapa, si no existe, fallback a un genérico
+        const nombreTiendaReal = REAL_SHOP_NAMES[selectedPos.zona] || `Carnicería ${selectedPos.zona}`;
 
-        // 2. DEFINIR COLUMNAS
+        // 2. DEFINIR COLUMNAS (Punto 4 y 5)
         const headers = [['Mostrador', 'Familia', 'Código', 'Uni.Med', 'Artículo']];
         if (showPvp) {
             headers[0].push('PVP');
@@ -219,7 +229,7 @@ const SupervisorDashboard: React.FC = () => {
             return;
         }
 
-        // 4. ORDENAR: 1º Sección (Mostrador), 2º Alfabético
+        // 4. ORDENAR: 1º Sección (Mostrador), 2º Alfabético (Punto 6)
         allArticles.sort((a, b) => {
             const secA = parseInt(a.Sección) || 99;
             const secB = parseInt(b.Sección) || 99;
@@ -227,7 +237,7 @@ const SupervisorDashboard: React.FC = () => {
             return a.Descripción.localeCompare(b.Descripción);
         });
 
-        // 5. AGRUPAR POR MOSTRADOR (SECCIÓN)
+        // 5. AGRUPAR POR MOSTRADOR (Punto 7)
         const sections: Record<string, any[]> = {};
         allArticles.forEach(art => {
             const sec = art.Sección || 'Otros';
@@ -244,15 +254,14 @@ const SupervisorDashboard: React.FC = () => {
                 if (!isNaN(num)) precioStr = num.toLocaleString('es-ES', {minimumFractionDigits: 2}) + ' €';
             }
 
-            // CORRECCIÓN UNIDAD DE MEDIDA: Leer directamente de la BD sin valor por defecto 'U'
-            // Se busca UniMed, o Uni.Med o variaciones si el CSV fue parseado diferente.
+            // Punto 4: Columna Uni.Med
             const uniMed = (art as any)['UniMed'] || (art as any)['Uni.Med'] || art.UniMed || '';
 
             const row = [
                 art.Sección, 
                 art.Familia, 
                 art.Referencia, 
-                uniMed, // Valor real de base de datos
+                uniMed, 
                 art.Descripción
             ];
             if (showPvp) row.push(precioStr);
@@ -260,7 +269,7 @@ const SupervisorDashboard: React.FC = () => {
             sections[sec].push(row);
         });
 
-        // 6. GENERAR TABLAS
+        // 6. GENERAR TABLAS E ITERAR SECCIONES
         const sortedSectionKeys = Object.keys(sections).sort((a, b) => (parseInt(a)||99) - (parseInt(b)||99));
         
         let isFirstTable = true;
@@ -268,21 +277,21 @@ const SupervisorDashboard: React.FC = () => {
         for (const secKey of sortedSectionKeys) {
             const rows = sections[secKey];
             
-            // Forzar salto de página entre mostradores
+            // Punto 7: Cortar página entre mostradores
             if (!isFirstTable) {
                 doc.addPage();
             }
             isFirstTable = false;
 
+            // Guardamos página de inicio de ESTE mostrador para la paginación relativa
             const startPage = doc.getNumberOfPages();
 
             autoTable(doc, {
                 head: headers,
                 body: rows,
                 theme: 'grid',
-                // CORRECCIÓN ESPACIADO: Pegado a la cabecera (Y=25)
-                startY: 25, 
-                margin: { top: 25, bottom: 15 }, 
+                startY: 30, // Margen superior para cabecera de 2 líneas
+                margin: { top: 30, bottom: 15 },
                 styles: {
                     fontSize: 9,
                     cellPadding: 1,
@@ -307,48 +316,42 @@ const SupervisorDashboard: React.FC = () => {
                     4: { cellWidth: 'auto' }, // Artículo
                     5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } // PVP
                 },
+                // DIBUJAR CABECERAS (Punto 1 y 2)
                 didDrawPage: (data) => {
-                    // --- CABECERA ---
-                    // Línea 1: GRUPO ### EMPRESA
+                    // Línea 1: NOMBRE TIENDA ### EMPRESA
                     doc.setFontSize(14);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(150, 75, 0); 
+                    doc.setTextColor(150, 75, 0); // Color marrón
                     
-                    const headerText = `${grupoTienda.toUpperCase()} ### ${companyName.toUpperCase()}`;
-                    doc.text(headerText, 105, 12, { align: 'center' });
+                    const headerText = `${nombreTiendaReal.toUpperCase()} ### ${companyName.toUpperCase()}`;
+                    doc.text(headerText, 105, 15, { align: 'center' });
                     
-                    // Línea 2: FECHA REVISIÓN (Sin espacio excesivo, justo debajo)
+                    // Línea 2: Fecha Revisión (En línea separada)
                     doc.setFontSize(10);
                     doc.setTextColor(0);
                     doc.setFont('helvetica', 'normal');
-                    // Posición Y=17 para estar pegado a la línea 1 (Y=12) y dejar espacio para tabla en Y=25
-                    doc.text(`Fecha Revisión: ${fechaRev}`, 105, 17, { align: 'center' }); 
+                    doc.text(`Fecha Revisión: ${fechaRev}`, 105, 22, { align: 'center' }); 
                 }
             });
 
-            // LÓGICA DE PIE DE PÁGINA ESPECÍFICO POR SECCIÓN
-            // Calculamos qué páginas ocupó esta sección específica para numerarlas
+            // LÓGICA DE PIE DE PÁGINA (Punto 3 y 7)
+            // Calculamos el total de páginas SOLO de esta sección (Mostrador)
             const endPage = doc.getNumberOfPages();
             const totalPagesInSection = endPage - startPage + 1;
             
-            // Determinar texto del pie según mostrador
-            let footerLeftText = "";
-            if (secKey === '1') footerLeftText = "Carnicería";
-            else if (secKey === '2') footerLeftText = "Charcutería";
-            else footerLeftText = `Sección ${secKey}`; // Fallback para otros mostradores
-
+            // Escribimos el pie de página solo en las páginas generadas para este mostrador
             for (let i = startPage; i <= endPage; i++) {
                 doc.setPage(i);
                 const currentPageInSection = i - startPage + 1;
                 const footerY = doc.internal.pageSize.height - 10;
                 
                 doc.setFontSize(8);
-                doc.setTextColor(0);
+                doc.setTextColor(0); // Negro
                 
-                // Izquierda: Carnicería o Charcutería // ZONA
-                doc.text(`${footerLeftText} // ${selectedPos.zona}`, 14, footerY);
+                // Izquierda: "Carnicería // [ZONA]"
+                doc.text(`Carnicería // ${selectedPos.zona}`, 14, footerY);
                 
-                // Derecha: Numeración reiniciada por mostrador
+                // Derecha: "Página X de Y" (Relativo al mostrador)
                 doc.text(`Página ${currentPageInSection} de ${totalPagesInSection}`, 196, footerY, { align: 'right' });
             }
         }
