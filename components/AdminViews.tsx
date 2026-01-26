@@ -601,12 +601,16 @@ export const FamiliesList: React.FC<{ families: Family[] } & ViewProps> = ({ fam
 };
 
 export const DataUploadView: React.FC = () => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploadType, setUploadType] = useState<'articulos' | 'tarifas'>('articulos');
+    const artInputRef = useRef<HTMLInputElement>(null);
+    const tarInputRef = useRef<HTMLInputElement>(null);
+    
+    // Estados separados para cada tipo de dato (Diseño Original)
+    const [pendingArticulos, setPendingArticulos] = useState<Articulo[] | null>(null);
+    const [pendingTarifas, setPendingTarifas] = useState<Tarifa[] | null>(null);
     const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
 
-    const processFile = (content: string) => {
+    const processFile = (content: string, type: 'articulos' | 'tarifas') => {
         const lines = content.split(/\r\n|\n/).filter(line => line.trim() !== '');
         if (lines.length < 2) return [];
 
@@ -614,17 +618,15 @@ export const DataUploadView: React.FC = () => {
         const result = [];
 
         for (let i = 1; i < lines.length; i++) {
-            // Separa por punto y coma, pero ten cuidado si las comillas contienen punto y coma (aunque en este caso es simple)
             const row = lines[i].split(';');
             if (row.length < headers.length) continue;
 
             const obj: any = {};
             headers.forEach((h, index) => {
                 let val = row[index] ? row[index].trim() : '';
-                // Limpiar comillas extras que traen los números del CSV (ej: "3,41 ")
                 val = val.replace(/^"|"$/g, '').trim();
                 
-                // Mapeo específico para la columna problemática Uni.Med
+                // IMPORTANTE: Mapeo de Uni.Med a UniMed para la nueva estructura
                 if (h === 'Uni.Med') {
                     obj['UniMed'] = val;
                 } else {
@@ -636,73 +638,111 @@ export const DataUploadView: React.FC = () => {
         return result;
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>, type: 'articulos' | 'tarifas') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setLoading(true);
-        setStatus('Procesando archivo...');
-
         const reader = new FileReader();
-        reader.onload = async (evt) => {
+        reader.onload = (evt) => {
+            const text = evt.target?.result as string;
             try {
-                const text = evt.target?.result as string;
-                const data = processFile(text);
-                
-                if (data.length === 0) throw new Error("El archivo parece estar vacío o tiene formato incorrecto.");
-
-                if (uploadType === 'articulos') {
-                    // Validar estructura básica
-                    if (!data[0].Referencia) throw new Error("Falta columna 'Referencia'.");
-                    await saveAllData({ articulos: data as Articulo[] });
-                    setStatus(`✅ Se han actualizado ${data.length} artículos correctamente.`);
+                const data = processFile(text, type);
+                if (type === 'articulos') {
+                    if (!data[0].Referencia) throw new Error("CSV Artículos inválido");
+                    setPendingArticulos(data as Articulo[]);
                 } else {
-                    if (!data[0].Tienda) throw new Error("Falta columna 'Tienda'.");
-                    await saveAllData({ tarifas: data as Tarifa[] });
-                    setStatus(`✅ Se han actualizado ${data.length} tarifas correctamente.`);
+                    if (!data[0].Tienda) throw new Error("CSV Tarifas inválido");
+                    setPendingTarifas(data as Tarifa[]);
                 }
-            } catch (err: any) {
-                console.error(err);
-                setStatus(`❌ Error: ${err.message}`);
-            } finally {
-                setLoading(false);
-                if (fileInputRef.current) fileInputRef.current.value = '';
+            } catch (error) {
+                alert("Error procesando archivo: Formato incorrecto.");
             }
         };
-        reader.readAsText(file, 'ISO-8859-1'); // Codificación típica de CSV excel español
+        reader.readAsText(file, 'ISO-8859-1');
+    };
+
+    const handleUpdateDB = async () => {
+        if (!pendingArticulos && !pendingTarifas) return;
+        setLoading(true);
+        
+        const updates: Partial<AppData> = {};
+        if (pendingArticulos) updates.articulos = pendingArticulos;
+        if (pendingTarifas) updates.tarifas = pendingTarifas;
+        
+        await saveAllData(updates);
+        
+        setLoading(false);
+        setPendingArticulos(null);
+        setPendingTarifas(null);
+        setSuccessMsg("¡Base de datos actualizada correctamente!");
+        setTimeout(() => setSuccessMsg(''), 3000);
+        
+        if (artInputRef.current) artInputRef.current.value = '';
+        if (tarInputRef.current) tarInputRef.current.value = '';
     };
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 animate-fade-in max-w-2xl mx-auto text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 animate-fade-in max-w-4xl mx-auto text-center">
             <div className="w-20 h-20 bg-brand-50 dark:bg-brand-900/20 rounded-full flex items-center justify-center text-brand-600 mb-6 mx-auto">
                 <UploadIcon className="w-10 h-10" />
             </div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2 uppercase tracking-tight">Carga de Datos CSV</h2>
-            <p className="text-slate-500 mb-8">Actualiza el catálogo de artículos o las tarifas vigentes.</p>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-8 uppercase tracking-tight">Carga de Datos</h2>
             
-            <div className="flex justify-center gap-4 mb-8">
-                <button onClick={() => setUploadType('articulos')} className={`px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all border-2 ${uploadType === 'articulos' ? 'border-brand-600 text-brand-600 bg-brand-50 dark:bg-brand-900/30' : 'border-transparent bg-gray-100 dark:bg-slate-900 text-slate-500'}`}>Artículos</button>
-                <button onClick={() => setUploadType('tarifas')} className={`px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all border-2 ${uploadType === 'tarifas' ? 'border-brand-600 text-brand-600 bg-brand-50 dark:bg-brand-900/30' : 'border-transparent bg-gray-100 dark:bg-slate-900 text-slate-500'}`}>Tarifas</button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                {/* CAJA ARTÍCULOS */}
+                <div className={`border-2 border-dashed rounded-xl p-8 transition-colors ${pendingArticulos ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-300 dark:border-slate-600'}`}>
+                    <h3 className="font-bold text-slate-700 dark:text-slate-300 mb-4 text-sm uppercase">Archivo de Artículos (CSV)</h3>
+                    <input 
+                        type="file" 
+                        accept=".csv" 
+                        ref={artInputRef}
+                        onChange={(e) => handleFile(e, 'articulos')} 
+                        className="hidden" 
+                        id="file-art"
+                    />
+                    <label htmlFor="file-art" className="bg-brand-50 dark:bg-slate-700 text-brand-600 dark:text-brand-300 px-6 py-3 rounded-lg font-bold text-xs uppercase cursor-pointer hover:bg-brand-100 dark:hover:bg-slate-600 transition-colors inline-block">
+                        Seleccionar Archivo
+                    </label>
+                    {pendingArticulos && (
+                        <p className="mt-4 text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
+                            ✓ {pendingArticulos.length} artículos leídos
+                        </p>
+                    )}
+                </div>
+
+                {/* CAJA TARIFAS */}
+                <div className={`border-2 border-dashed rounded-xl p-8 transition-colors ${pendingTarifas ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-gray-300 dark:border-slate-600'}`}>
+                    <h3 className="font-bold text-slate-700 dark:text-slate-300 mb-4 text-sm uppercase">Archivo de Tarifas (CSV)</h3>
+                    <input 
+                        type="file" 
+                        accept=".csv" 
+                        ref={tarInputRef}
+                        onChange={(e) => handleFile(e, 'tarifas')} 
+                        className="hidden" 
+                        id="file-tar"
+                    />
+                    <label htmlFor="file-tar" className="bg-brand-50 dark:bg-slate-700 text-brand-600 dark:text-brand-300 px-6 py-3 rounded-lg font-bold text-xs uppercase cursor-pointer hover:bg-brand-100 dark:hover:bg-slate-600 transition-colors inline-block">
+                        Seleccionar Archivo
+                    </label>
+                    {pendingTarifas && (
+                        <p className="mt-4 text-green-600 dark:text-green-400 text-xs font-bold animate-pulse">
+                            ✓ {pendingTarifas.length} tarifas leídas
+                        </p>
+                    )}
+                </div>
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-10 hover:bg-gray-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer relative">
-                <input 
-                    type="file" 
-                    accept=".csv" 
-                    ref={fileInputRef}
-                    onChange={handleFileUpload} 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={loading}
-                />
-                <p className="font-bold text-slate-600 dark:text-slate-300">
-                    {loading ? 'Procesando...' : `Haz clic para subir CSV de ${uploadType}`}
-                </p>
-                <p className="text-xs text-slate-400 mt-2">Formato: CSV delimitado por punto y coma (;)</p>
-            </div>
-
-            {status && (
-                <div className={`mt-6 p-4 rounded-lg text-sm font-bold ${status.startsWith('✅') ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                    {status}
+            <button 
+                onClick={handleUpdateDB}
+                disabled={(!pendingArticulos && !pendingTarifas) || loading}
+                className="w-full bg-brand-600 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all uppercase text-xs tracking-widest"
+            >
+                {loading ? 'ACTUALIZANDO...' : 'ACTUALIZAR BASE DE DATOS'}
+            </button>
+            
+            {successMsg && (
+                <div className="mt-6 p-4 bg-green-100 text-green-700 rounded-lg font-bold text-sm animate-fade-in">
+                    {successMsg}
                 </div>
             )}
         </div>
