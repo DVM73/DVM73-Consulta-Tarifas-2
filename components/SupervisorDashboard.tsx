@@ -194,21 +194,11 @@ const SupervisorDashboard: React.FC = () => {
         const fechaRev = new Date(tarRevisionDate).toLocaleDateString('es-ES');
         const showPvp = tarShowPvp === 'Si';
 
-        // 1. OBTENER NOMBRE COMERCIAL
-        let nombreTienda = `Carnicería ${selectedPos.zona}`;
-        // Mapeo manual según ejemplos solicitados (esto idealmente iría en BD)
-        const zoneMap: Record<string, string> = {
-            'ATA': 'Carnicería El Buen Corte',
-            'TO3': 'Carnicería Villalba',
-            'EC2': 'Carnicería Medina',
-            // Añadir más mapeos aquí si se conocen
-        };
-        if (zoneMap[selectedPos.zona]) {
-            nombreTienda = zoneMap[selectedPos.zona];
-        }
+        // 1. OBTENER NOMBRE DEL GRUPO (CABECERA)
+        // Se usa el campo 'grupo' del punto de venta seleccionado
+        const grupoTienda = selectedPos.grupo || "GRUPO NO ASIGNADO";
 
         // 2. DEFINIR COLUMNAS
-        // Si no se muestra PVP, eliminamos la columna completamente.
         const headers = [['Mostrador', 'Familia', 'Código', 'Uni.Med', 'Artículo']];
         if (showPvp) {
             headers[0].push('PVP');
@@ -238,7 +228,6 @@ const SupervisorDashboard: React.FC = () => {
         });
 
         // 5. AGRUPAR POR MOSTRADOR (SECCIÓN)
-        // Esto es necesario para separar la paginación y cortar página entre mostradores.
         const sections: Record<string, any[]> = {};
         allArticles.forEach(art => {
             const sec = art.Sección || 'Otros';
@@ -255,11 +244,15 @@ const SupervisorDashboard: React.FC = () => {
                 if (!isNaN(num)) precioStr = num.toLocaleString('es-ES', {minimumFractionDigits: 2}) + ' €';
             }
 
+            // CORRECCIÓN UNIDAD DE MEDIDA: Leer directamente de la BD sin valor por defecto 'U'
+            // Se busca UniMed, o Uni.Med o variaciones si el CSV fue parseado diferente.
+            const uniMed = (art as any)['UniMed'] || (art as any)['Uni.Med'] || art.UniMed || '';
+
             const row = [
                 art.Sección, 
                 art.Familia, 
                 art.Referencia, 
-                art.UniMed || 'U', // Default U si no tiene
+                uniMed, // Valor real de base de datos
                 art.Descripción
             ];
             if (showPvp) row.push(precioStr);
@@ -275,20 +268,21 @@ const SupervisorDashboard: React.FC = () => {
         for (const secKey of sortedSectionKeys) {
             const rows = sections[secKey];
             
-            // Si no es la primera tabla, añadimos página nueva para separar mostrador
+            // Forzar salto de página entre mostradores
             if (!isFirstTable) {
                 doc.addPage();
             }
             isFirstTable = false;
 
-            // Guardamos la página donde empieza este mostrador
             const startPage = doc.getNumberOfPages();
 
             autoTable(doc, {
                 head: headers,
                 body: rows,
                 theme: 'grid',
-                startY: 35, // Espacio para cabecera fija
+                // CORRECCIÓN ESPACIADO: Pegado a la cabecera (Y=25)
+                startY: 25, 
+                margin: { top: 25, bottom: 15 }, 
                 styles: {
                     fontSize: 9,
                     cellPadding: 1,
@@ -313,49 +307,48 @@ const SupervisorDashboard: React.FC = () => {
                     4: { cellWidth: 'auto' }, // Artículo
                     5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } // PVP
                 },
-                // DIBUJAR CABECERAS Y PIES DE PÁGINA
                 didDrawPage: (data) => {
-                    const pageNumber = doc.getNumberOfPages();
-                    
-                    // --- CABECERA (Repetida en cada página) ---
-                    // Línea 1: TIENDA ### EMPRESA
+                    // --- CABECERA ---
+                    // Línea 1: GRUPO ### EMPRESA
                     doc.setFontSize(14);
                     doc.setFont('helvetica', 'bold');
                     doc.setTextColor(150, 75, 0); 
-                    doc.text(`${nombreTienda.toUpperCase()} ### ${companyName.toUpperCase()}`, 105, 15, { align: 'center' });
                     
-                    // Línea 2: FECHA REVISIÓN (Debajo, separada)
+                    const headerText = `${grupoTienda.toUpperCase()} ### ${companyName.toUpperCase()}`;
+                    doc.text(headerText, 105, 12, { align: 'center' });
+                    
+                    // Línea 2: FECHA REVISIÓN (Sin espacio excesivo, justo debajo)
                     doc.setFontSize(10);
                     doc.setTextColor(0);
                     doc.setFont('helvetica', 'normal');
-                    doc.text(`Fecha Revisión: ${fechaRev}`, 105, 22, { align: 'center' }); // Centrado debajo del título
-
-                    // --- PIE DE PÁGINA ---
-                    const footerY = doc.internal.pageSize.height - 10;
-                    doc.setFontSize(8);
-                    
-                    // Izquierda: Carnicería // [ZONA]
-                    doc.text(`Carnicería // ${selectedPos.zona}`, 14, footerY);
-                    
-                    // Derecha: Página X de Y (Calculado posteriormente o aquí si es global, 
-                    // pero para "por mostrador" necesitamos saber cuantas páginas ocupa la tabla actual)
-                    // Como autoTable no nos dice el total de páginas de la tabla actual FÁCILMENTE durante el dibujo,
-                    // usaremos un marcador temporal o lógica post-proceso.
-                    // ESTRATEGIA SIMPLE Y ROBUSTA: Escribimos el pie de página AL FINAL del bucle de sección.
+                    // Posición Y=17 para estar pegado a la línea 1 (Y=12) y dejar espacio para tabla en Y=25
+                    doc.text(`Fecha Revisión: ${fechaRev}`, 105, 17, { align: 'center' }); 
                 }
             });
 
-            // LÓGICA DE NUMERACIÓN DE PÁGINA POR MOSTRADOR
-            // Recorremos las páginas que ocupó esta sección y escribimos el número
+            // LÓGICA DE PIE DE PÁGINA ESPECÍFICO POR SECCIÓN
+            // Calculamos qué páginas ocupó esta sección específica para numerarlas
             const endPage = doc.getNumberOfPages();
             const totalPagesInSection = endPage - startPage + 1;
             
+            // Determinar texto del pie según mostrador
+            let footerLeftText = "";
+            if (secKey === '1') footerLeftText = "Carnicería";
+            else if (secKey === '2') footerLeftText = "Charcutería";
+            else footerLeftText = `Sección ${secKey}`; // Fallback para otros mostradores
+
             for (let i = startPage; i <= endPage; i++) {
                 doc.setPage(i);
                 const currentPageInSection = i - startPage + 1;
                 const footerY = doc.internal.pageSize.height - 10;
+                
                 doc.setFontSize(8);
                 doc.setTextColor(0);
+                
+                // Izquierda: Carnicería o Charcutería // ZONA
+                doc.text(`${footerLeftText} // ${selectedPos.zona}`, 14, footerY);
+                
+                // Derecha: Numeración reiniciada por mostrador
                 doc.text(`Página ${currentPageInSection} de ${totalPagesInSection}`, 196, footerY, { align: 'right' });
             }
         }
