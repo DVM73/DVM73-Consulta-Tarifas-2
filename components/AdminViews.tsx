@@ -148,18 +148,33 @@ export const UsersList: React.FC<{ users: User[], posList: PointOfSale[] } & Vie
         verPVP: false 
     });
 
-    // Ordenar usuarios por Código de Tienda
+    // Ordenar usuarios por Código de Tienda (ROBUSTO)
     const sortedUsers = useMemo(() => {
-        return [...users].sort((a, b) => {
+        const sorted = [...users];
+        return sorted.sort((a, b) => {
             const posA = posList.find(p => p.zona === a.zona);
             const posB = posList.find(p => p.zona === b.zona);
             
-            // Usamos 'ZZZ' para que los que no tienen código (Admins/Supervisores) salgan al final
-            const codeA = posA?.código || 'ZZZ'; 
-            const codeB = posB?.código || 'ZZZ';
+            // 1. Prioridad: Que tenga tienda asignada.
+            // Si A no tiene, va al final (retorna 1).
+            if (!posA && posB) return 1;
+            // Si B no tiene, A va antes (retorna -1).
+            if (posA && !posB) return -1;
+            // Si ninguno tiene, ordenar por nombre
+            if (!posA && !posB) return a.nombre.localeCompare(b.nombre);
             
-            // Intenta ordenar numéricamente si es posible para que 2 vaya antes que 10
-            return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+            // 2. Ambos tienen tienda: Comparar códigos numéricamente
+            if (posA && posB) {
+                const numA = parseInt(posA.código, 10);
+                const numB = parseInt(posB.código, 10);
+                
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                // Fallback alfanumérico si no son números
+                return posA.código.localeCompare(posB.código);
+            }
+            return 0;
         });
     }, [users, posList]);
 

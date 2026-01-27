@@ -86,7 +86,9 @@ const SupervisorDashboard: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 300));
 
           const doc = new jsPDF();
-          
+          const pageLabels: Record<number, string> = {};
+
+          // 1. Filtrar artículos principales (Con Tarifa asignada en esa tienda)
           const mainArticles = (data?.articulos || []).filter(art => {
               const tarifa = data?.tarifas.find(t => 
                   t.Tienda === pos.zona && 
@@ -95,31 +97,54 @@ const SupervisorDashboard: React.FC = () => {
               return tarifa && tarifa['P.V.P.'] && !FAMILIAS_ANEXO.includes(art.Familia);
           });
 
-          mainArticles.sort((a, b) => {
-              const secA = parseInt(a.Sección) || 99;
-              const secB = parseInt(b.Sección) || 99;
-              if (secA !== secB) return secA - secB;
-              return a.Descripción.localeCompare(b.Descripción);
-          });
+          // 2. Separar por Mostrador
+          const carniceriaArticles = mainArticles.filter(a => a.Sección === '1').sort((a,b) => a.Descripción.localeCompare(b.Descripción));
+          const charcuteriaArticles = mainArticles.filter(a => a.Sección === '2').sort((a,b) => a.Descripción.localeCompare(b.Descripción));
+          // Artículos con tarifa pero sección rara (si los hay)
+          const otherMainArticles = mainArticles.filter(a => a.Sección !== '1' && a.Sección !== '2').sort((a,b) => a.Descripción.localeCompare(b.Descripción));
 
+          // 3. Artículos Anexo (Sin chequear tarifa, como estaba antes)
           const appendixArticles = (data?.articulos || []).filter(art => 
               FAMILIAS_ANEXO.includes(art.Familia)
-          );
-          appendixArticles.sort((a, b) => a.Descripción.localeCompare(b.Descripción));
+          ).sort((a, b) => a.Descripción.localeCompare(b.Descripción));
 
-          generateInventoryTable(doc, pos, mainArticles, `INVENTARIO CARNICERÍA/CHARCUTERÍA - ${invMonth} ${invYear}`);
+          // Helper para generar bloque en páginas nuevas
+          const generateSectionBlock = (articles: any[], title: string, footerLabel: string) => {
+              if (articles.length === 0) return;
+              
+              // Si no es la primera página o ya se ha escrito algo, nueva página
+              if (doc.getCurrentPageInfo().pageNumber > 1 || (doc as any).lastAutoTable?.finalY > 0) {
+                  doc.addPage();
+              }
+              
+              const startPage = doc.getCurrentPageInfo().pageNumber;
+              generateInventoryTable(doc, pos, articles, title);
+              const endPage = doc.getCurrentPageInfo().pageNumber;
 
-          if (appendixArticles.length > 0) {
-              if (mainArticles.length > 0) doc.addPage();
-              generateInventoryTable(doc, pos, appendixArticles, `INVENTARIO ESPECIAS / ENVASES / LIMPIEZA - ${invMonth} ${invYear}`);
-          }
+              for(let i = startPage; i <= endPage; i++) {
+                  pageLabels[i] = footerLabel;
+              }
+          };
 
+          // Generar Bloques
+          generateSectionBlock(carniceriaArticles, `INVENTARIO CARNICERÍA - ${invMonth} ${invYear}`, 'Carnicería');
+          generateSectionBlock(charcuteriaArticles, `INVENTARIO CHARCUTERÍA - ${invMonth} ${invYear}`, 'Charcutería');
+          generateSectionBlock(otherMainArticles, `INVENTARIO OTROS - ${invMonth} ${invYear}`, 'Tienda');
+          generateSectionBlock(appendixArticles, `INVENTARIO ESPECIAS / ENVASES / LIMPIEZA - ${invMonth} ${invYear}`, 'Tienda');
+
+          // Pie de Página final
           const pageCount = doc.getNumberOfPages();
           for (let i = 1; i <= pageCount; i++) {
               doc.setPage(i);
               doc.setFontSize(8);
-              doc.setTextColor(100);
-              doc.text(`Página ${i} de ${pageCount}`, 196, 290, { align: 'right' });
+              doc.setTextColor(0); // Negro
+              
+              // X // Y
+              const label = pageLabels[i] || 'Tienda';
+              doc.text(`${label} // ${pos.zona}`, 14, 285);
+              
+              // Numeración
+              doc.text(`Página ${i} de ${pageCount}`, 196, 285, { align: 'right' });
           }
 
           doc.save(`Inventario_${pos.zona}_${invMonth}_${invYear}.pdf`);
