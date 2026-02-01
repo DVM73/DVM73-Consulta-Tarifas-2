@@ -61,13 +61,14 @@ const SupervisorDashboard: React.FC = () => {
           
           // Lógica de Notificación de Actualización (ROBUSTA)
           if (appData.lastUpdated) {
-             // Creamos una clave única que incluye la fecha de actualización
-             // De esta forma, si la fecha cambia, la clave cambia y el mensaje vuelve a salir.
-             const storageKey = `supervisor_update_ack_${appData.lastUpdated}`;
+             // Saneamos la fecha para usarla como clave (quitamos espacios y caracteres raros)
+             const cleanDate = appData.lastUpdated.replace(/[^a-zA-Z0-9]/g, '');
+             const storageKey = `supervisor_update_ack_${cleanDate}`;
              const hasSeenThisUpdate = localStorage.getItem(storageKey);
              
              if (!hasSeenThisUpdate) {
-                 setShowUpdateModal(true);
+                 // Pequeño retardo para asegurar una renderización suave
+                 setTimeout(() => setShowUpdateModal(true), 500);
              }
           }
           
@@ -77,7 +78,8 @@ const SupervisorDashboard: React.FC = () => {
 
   const handleCloseUpdateModal = () => {
       if (data?.lastUpdated) {
-          const storageKey = `supervisor_update_ack_${data.lastUpdated}`;
+          const cleanDate = data.lastUpdated.replace(/[^a-zA-Z0-9]/g, '');
+          const storageKey = `supervisor_update_ack_${cleanDate}`;
           localStorage.setItem(storageKey, 'true');
       }
       setShowUpdateModal(false);
@@ -328,6 +330,7 @@ const SupervisorDashboard: React.FC = () => {
                 </div>
             </div>
         );
+
         case 'tarifas_impreso': return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
                  {/* ... Contenido Tarifas Impreso (Sin Cambios) ... */}
