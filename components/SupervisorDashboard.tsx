@@ -39,6 +39,7 @@ const SupervisorDashboard: React.FC = () => {
   const [view, setView] = useState<SupervisorView>('menu');
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Estados para Inventarios
   const [invMonth, setInvMonth] = useState(new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date()).toUpperCase());
@@ -58,9 +59,25 @@ const SupervisorDashboard: React.FC = () => {
           if (appData.pos && appData.pos.length > 0) {
               setTarPosId(appData.pos[0].id);
           }
+          
+          // Lógica de Notificación de Actualización
+          if (appData.lastUpdated) {
+             const lastSeenUpdate = localStorage.getItem('lastSeenUpdate_supervisor');
+             if (lastSeenUpdate !== appData.lastUpdated) {
+                 setShowUpdateModal(true);
+             }
+          }
+          
           setLoading(false);
       });
   }, []);
+
+  const handleCloseUpdateModal = () => {
+      if (data?.lastUpdated) {
+          localStorage.setItem('lastSeenUpdate_supervisor', data.lastUpdated);
+      }
+      setShowUpdateModal(false);
+  };
 
   if (loading) return (
       <div className="h-screen flex items-center justify-center bg-[#f3f4f6]">
@@ -577,6 +594,33 @@ const SupervisorDashboard: React.FC = () => {
             </div>
         </div>
       </main>
+
+      {/* MODAL DE AVISO DE ACTUALIZACIÓN */}
+      {showUpdateModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 p-6 text-center">
+                <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center text-brand-600 mb-4 mx-auto animate-bounce">
+                    <HistoryIcon className="w-8 h-8" />
+                </div>
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
+                    ¡Hola {user?.nombre || 'Supervisor'}!
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    Te informo que se han cargado nuevos datos en el sistema.
+                </p>
+                <div className="bg-gray-100 dark:bg-slate-800 rounded-lg p-3 mb-6">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha de actualización</p>
+                    <p className="text-sm font-bold text-brand-600 dark:text-brand-400">{data?.lastUpdated}</p>
+                </div>
+                <button 
+                    onClick={handleCloseUpdateModal}
+                    className="w-full bg-brand-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-all"
+                >
+                    ENTENDIDO
+                </button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

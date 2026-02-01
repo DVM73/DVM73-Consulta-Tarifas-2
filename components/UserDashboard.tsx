@@ -371,7 +371,7 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </main>
 
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
                         <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center">
                             <div className="flex items-center gap-3">
